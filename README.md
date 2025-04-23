@@ -35,7 +35,7 @@ For help and chatter, join us on [Matrix](https://matrix.to/#/#oscollar:matrix.o
 
 #### Requirements
 
-Simulator: OpenSim 0.9.3 or newer
+Simulator: OpenSim 0.9.3.1 or newer
 
 - Teleporting to a sim running older versions of OpenSim may result in loss of settings (linkset data) and loss of functionality (non-running scripts)
 - Teleporting to a hypergrid sim may result in scripts to stop running and/or reset, unless the destination sim is patched
