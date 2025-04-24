@@ -350,7 +350,7 @@ UserCommand(integer iAuth, string sStr, key kID)
     if (sStrLower == "print settings" || sStrLower == "debug settings") PrintSettings(kID, llGetSubString(sStrLower, 0, 4));
     else if (llSubStringIndex(sStrLower,"load card") == 0) {
         if (iAuth == CMD_OWNER && kID != g_kTempOwner) {
-            if (llGetInventoryKey(g_sCard) != NULL_KEY) {
+            if (llGetInventoryType(g_sCard) == INVENTORY_NOTECARD) {
                 llMessageLinked(LINK_DIALOG, NOTIFY, "0"+ "\n\nLoading backup from "+g_sCard+" card. If you want to load settings from the web, please type: /%CHANNEL% %PREFIX% load url <url>\n\n", kID);
                 llLinksetDataReset();
                 g_lSettings = [];
