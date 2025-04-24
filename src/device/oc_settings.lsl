@@ -204,6 +204,7 @@ PrintSettings(key kID, string sDebug)
 
 integer SaveCard(key kID)
 {
+    integer iRet = FALSE;
     list lOut = Add2OutList(g_lSettings, "save");
     try
     {
@@ -211,18 +212,17 @@ integer SaveCard(key kID)
             llRemoveInventory(g_sCard);
         osMakeNotecard(g_sCard, lOut);
         llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"Settings saved.", kID);
-        return TRUE;
+        iRet = TRUE;
     }
     catch (scriptexception ex)
     {
         string msg = yExceptionMessage(ex);
         if (osStringStartsWith(msg, "ossl permission error", TRUE)) {
             llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"Could not save the '.settings' notecard. Use 'Print' instead, then copy & paste/replace the output into a notecard called '.settings' within the storage prim - link number "+(string)llGetLinkNumber()+", link name "+llGetObjectName()+" (the %DEVICETYPE% may need to be unlocked for doing this)", kID);
-            return FALSE;
         } else
             throw;
     }
-    return FALSE;
+    return iRet;
 }
 
 ParseCardLine(string sData, integer iLine)
