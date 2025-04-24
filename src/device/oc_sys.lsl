@@ -177,7 +177,10 @@ UpdateConfirmMenu() {
 HelpMenu(key kID, integer iAuth) {
     string sPrompt="\nVersion: "+g_sCollarVersion+"\n";
     sPrompt += "\nThis %DEVICETYPE% has a "+g_sIntegrity+" core.\n";
-    sPrompt += "\nScript engine: "+osGetScriptEngineName();
+    string sVersion = osGetSimulatorVersion();
+    integer idx = llSubStringIndex(sVersion, " ");
+    integer idx2 = llSubStringIndex(llGetSubString(sVersion, idx+1, -1), " ");
+    sPrompt += "\nSimulator: "+llGetSubString(sVersion, 0, idx+idx2); // strip contents of bin/.version
     list lUtility = [UPMENU];
     list lStaticButtons=["Help","Update","Version"];
     Dialog(kID, sPrompt, lStaticButtons, lUtility, 0, iAuth, "Help/About");
