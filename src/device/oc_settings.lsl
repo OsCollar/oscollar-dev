@@ -202,7 +202,7 @@ PrintSettings(key kID, string sDebug)
     }
 }
 
-SaveCard(key kID)
+integer SaveCard(key kID, integer iVerbose)
 {
     list lOut = Add2OutList(g_lSettings, "save");
     try
@@ -210,16 +210,19 @@ SaveCard(key kID)
         if (llGetInventoryType(g_sCard)==INVENTORY_NOTECARD)
             llRemoveInventory(g_sCard);
         osMakeNotecard(g_sCard, lOut);
-        llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"Settings saved.", kID);
+        if (iVerbose) llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"Settings saved.", kID);
+        return TRUE;
     }
     catch (scriptexception ex)
     {
         string msg = yExceptionMessage(ex);
-        if (osStringStartsWith(msg, "ossl permission error", TRUE))
-            llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"Saving is not enabled on this region. Use 'Print' instead, then copy & paste the output into a notecard called .settings within the storage prim - link number "+(string)llGetLinkNumber()+", link name "+llGetObjectName()+" (the %DEVICETYPE% may need to be unlocked for doing this)", kID);
-        else
+        if (osStringStartsWith(msg, "ossl permission error", TRUE)) {
+            if (iVerbose) llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"Saving is not enabled on this region. Use 'Print' instead, then copy & paste the output into a notecard called .settings within the storage prim - link number "+(string)llGetLinkNumber()+", link name "+llGetObjectName()+" (the %DEVICETYPE% may need to be unlocked for doing this)", kID);
+            return FALSE;
+        } else
             throw;
     }
+    return FALSE;
 }
 
 ParseCardLine(string sData, integer iLine)
@@ -355,7 +358,7 @@ UserCommand(integer iAuth, string sStr, key kID)
             } else llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"No "+g_sCard+" to load found.", kID);
         } else llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"%NOACCESS%", kID);
     } else if (llSubStringIndex(sStrLower,"save card") == 0) {
-        if (iAuth == CMD_OWNER) SaveCard(kID);
+        if (iAuth == CMD_OWNER) SaveCard(kID, TRUE);
     } else if (llSubStringIndex(sStrLower,"dump lsd") == 0) { // debug
         if (iAuth == CMD_OWNER) PrintLinksetData();
     } else if (sStrLower == "reboot" || sStrLower == "reboot --f") {
@@ -368,7 +371,13 @@ UserCommand(integer iAuth, string sStr, key kID)
             g_kConfirmDialogID = llGenerateKey();
             llMessageLinked(LINK_DIALOG, DIALOG, (string)kID+"|\nAre you sure you want to reboot the %DEVICETYPE%?|0|Yes`No|Cancel|"+(string)iAuth, g_kConfirmDialogID);
         }
-    } else if (sStrLower == "runaway") llSetTimerEvent(2.0);
+    } else if (sStrLower == "runaway") {
+        // We'll have to delete the card if we can't save a new one (with no owners)
+        // due to no ossl permissions, otherwise old owners can still be reloaded
+        // from the old card!
+        if (llGetInventoryType(g_sCard) == INVENTORY_NOTECARD && SaveCard(g_kWearer, FALSE)==FALSE) llRemoveInventory(g_sCard);
+        llSetTimerEvent(2.0);
+    }
 }
 
 PieSlice()
