@@ -216,7 +216,7 @@ SaveCard(key kID)
     {
         string msg = yExceptionMessage(ex);
         if (osStringStartsWith(msg, "ossl permission error", TRUE))
-            llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"Saving is not enabled on this region. Use 'Print' instead, then copy & paste the output into a notecard called .settings within the storage prim - link number "+(string)llGetLinkNumber()+", link name "+llGetObjectName(), kID);
+            llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"Saving is not enabled on this region. Use 'Print' instead, then copy & paste the output into a notecard called .settings within the storage prim - link number "+(string)llGetLinkNumber()+", link name "+llGetObjectName()+" (the %DEVICETYPE% may need to be unlocked for doing this)", kID);
         else
             throw;
     }
