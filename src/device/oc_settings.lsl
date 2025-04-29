@@ -372,10 +372,13 @@ UserCommand(integer iAuth, string sStr, key kID)
             llMessageLinked(LINK_DIALOG, DIALOG, (string)kID+"|\nAre you sure you want to reboot the %DEVICETYPE%?|0|Yes`No|Cancel|"+(string)iAuth, g_kConfirmDialogID);
         }
     } else if (sStrLower == "runaway") {
-        // We'll have to delete the card if we can't save a new one (with no owners)
-        // due to no ossl permissions, otherwise old owners can still be reloaded
+        // We'll have to delete the card if we can't save a new one (with no owners set)
+        // due to no ossl permissions, otherwise old owners might still be reloaded
         // from the old card!
-        if (llGetInventoryType(g_sCard) == INVENTORY_NOTECARD && SaveCard(g_kWearer)==FALSE) llRemoveInventory(g_sCard);
+        if (llGetInventoryType(g_sCard) == INVENTORY_NOTECARD && SaveCard(g_kWearer)==FALSE) {
+            llGiveInventory(g_kWearer, g_sCard);
+            llRemoveInventory(g_sCard);
+        }
         llSetTimerEvent(2.0);
     }
 }
