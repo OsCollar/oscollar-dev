@@ -22,7 +22,7 @@
 
 //merged HUD-menu, HUD-leash and HUD-rezzer into here June 2015 Otto (garvin.twine)
 
-string g_sVersion = "2025.01.06";
+string g_sVersion = "2025.05";
 
 list g_lPartners;
 list g_lNewPartnerIDs;

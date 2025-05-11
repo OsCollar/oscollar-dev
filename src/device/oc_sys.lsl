@@ -22,7 +22,7 @@
 //on menu request, give dialog, with alphabetized list of submenus
 //on listen, send submenu link message
 
-string g_sCollarVersion="2025.01.06";
+string g_sCollarVersion="2025.05";
 
 key g_kWearer = NULL_KEY;
 
@@ -177,14 +177,17 @@ UpdateConfirmMenu() {
 HelpMenu(key kID, integer iAuth) {
     string sPrompt="\nVersion: "+g_sCollarVersion+"\n";
     sPrompt += "\nThis %DEVICETYPE% has a "+g_sIntegrity+" core.\n";
-    sPrompt += "\nScript engine: "+osGetScriptEngineName();
+    string sVersion = osGetSimulatorVersion();
+    integer idx = llSubStringIndex(sVersion, " ");
+    integer idx2 = llSubStringIndex(llGetSubString(sVersion, idx+1, -1), " ");
+    sPrompt += "\nSimulator: "+llGetSubString(sVersion, 0, idx+idx2); // strip contents of bin/.version
     list lUtility = [UPMENU];
     list lStaticButtons=["Help","Update","Version"];
     Dialog(kID, sPrompt, lStaticButtons, lUtility, 0, iAuth, "Help/About");
 }
 
 MainMenu(key kID, integer iAuth) {
-    string sPrompt = "\nOsCollar \t"+g_sCollarVersion+"\n";
+    string sPrompt = "\nOsCollar\t"+g_sCollarVersion+"\n";
     sPrompt += "\nPrefix: %PREFIX%\nChannel: %CHANNEL%\nSafeword: "+g_sSafeWord;
     list lStaticButtons = ["Apps"];
     if (g_iAnimsMenu) lStaticButtons += "Animations";

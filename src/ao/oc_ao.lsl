@@ -19,7 +19,7 @@
 
 // Debug(string sStr) { llOwnerSay("Debug ["+llGetScriptName()+"]: " + sStr); }
 
-string g_sVersion = "2025.01.06";
+string g_sVersion = "2025.05";
 
 integer g_iInterfaceChannel = -12587429;
 integer g_iHUDChannel = -1812221819;
@@ -82,6 +82,8 @@ integer g_iRlvChecks;
 integer g_iRlvListener;
 integer RLV_MAX_CHECKS = 5;
 integer g_iRLVOn = FALSE;
+
+float g_fHeelOffset = -0.1;
 
 integer g_iTimerRlvDetect;
 integer g_iTimerChangeStand;
@@ -288,7 +290,9 @@ ToggleSitAnywhere()
 
 AdjustSitOffset()
 {
-    llOwnerSay("@adjustheight:1;0;"+(string)g_fSitOffset+"=force");
+    list l = llGetVisualParams(g_kWearer, ["heel_height", "platform_height"]);
+    float fHeelOffset = llList2Float(l, 0) + llList2Float(l, 1);
+    llOwnerSay("@adjustheight:1;0;"+(string)(g_fSitOffset+fHeelOffset)+"=force");
 }
 
 Notify(key kID, string sStr, integer iAlsoNotifyWearer)
@@ -615,7 +619,7 @@ default
         g_iRlvListener = llListen(519274, "", (string)g_kWearer, "");
         g_iRlvChecks = 0;
         llOwnerSay("@versionnew=519274");
-        llSetTimerEvent(5.0);
+        llSetTimerEvent(30.0);
     }
 
     on_rez(integer iStart)
@@ -700,6 +704,7 @@ default
         } else if (iChannel == 519274) {
             g_iRLVOn = TRUE;
             llListenRemove(g_iRlvListener);
+            llSetTimerEvent(5.0);
         } else if (llListFindList(g_lMenuIDs,[kID, iChannel]) != -1) {
             integer iMenuIndex = llListFindList(g_lMenuIDs, [kID]);
             string sMenuType = llList2String(g_lMenuIDs, iMenuIndex+4);
@@ -870,6 +875,7 @@ default
                 llListenRemove(g_iRlvListener);
                 g_iRlvChecks = 0;
                 g_iRLVOn = FALSE;
+                llSetTimerEvent(5.0);
             }
         }
     }

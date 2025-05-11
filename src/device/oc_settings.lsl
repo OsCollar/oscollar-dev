@@ -202,8 +202,9 @@ PrintSettings(key kID, string sDebug)
     }
 }
 
-SaveCard(key kID)
+integer SaveCard(key kID)
 {
+    integer iRet = FALSE;
     list lOut = Add2OutList(g_lSettings, "save");
     try
     {
@@ -211,15 +212,17 @@ SaveCard(key kID)
             llRemoveInventory(g_sCard);
         osMakeNotecard(g_sCard, lOut);
         llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"Settings saved.", kID);
+        iRet = TRUE;
     }
     catch (scriptexception ex)
     {
         string msg = yExceptionMessage(ex);
-        if (osStringStartsWith(msg, "ossl permission error", TRUE))
-            llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"Saving is not enabled on this region. Use 'Print' instead, then copy & paste the output into a notecard called .settings within the storage prim - link number "+(string)llGetLinkNumber()+", link name "+llGetObjectName(), kID);
-        else
+        if (osStringStartsWith(msg, "ossl permission error", TRUE)) {
+            llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"Could not save the '.settings' notecard. Use 'Print' instead, then copy & paste/replace the output into a notecard called '.settings' within the storage prim - link number "+(string)llGetLinkNumber()+", link name "+llGetObjectName()+" (the %DEVICETYPE% may need to be unlocked for doing this)", kID);
+        } else
             throw;
     }
+    return iRet;
 }
 
 ParseCardLine(string sData, integer iLine)
@@ -347,7 +350,7 @@ UserCommand(integer iAuth, string sStr, key kID)
     if (sStrLower == "print settings" || sStrLower == "debug settings") PrintSettings(kID, llGetSubString(sStrLower, 0, 4));
     else if (llSubStringIndex(sStrLower,"load card") == 0) {
         if (iAuth == CMD_OWNER && kID != g_kTempOwner) {
-            if (llGetInventoryKey(g_sCard) != NULL_KEY) {
+            if (llGetInventoryType(g_sCard) == INVENTORY_NOTECARD) {
                 llMessageLinked(LINK_DIALOG, NOTIFY, "0"+ "\n\nLoading backup from "+g_sCard+" card. If you want to load settings from the web, please type: /%CHANNEL% %PREFIX% load url <url>\n\n", kID);
                 llLinksetDataReset();
                 g_lSettings = [];
@@ -368,7 +371,16 @@ UserCommand(integer iAuth, string sStr, key kID)
             g_kConfirmDialogID = llGenerateKey();
             llMessageLinked(LINK_DIALOG, DIALOG, (string)kID+"|\nAre you sure you want to reboot the %DEVICETYPE%?|0|Yes`No|Cancel|"+(string)iAuth, g_kConfirmDialogID);
         }
-    } else if (sStrLower == "runaway") llSetTimerEvent(2.0);
+    } else if (sStrLower == "runaway") {
+        // We'll have to delete the card if we can't save a new one (with no owners set)
+        // due to no ossl permissions, otherwise old owners might still be reloaded
+        // from the old card!
+        if (llGetInventoryType(g_sCard) == INVENTORY_NOTECARD && SaveCard(g_kWearer)==FALSE) {
+            llGiveInventory(g_kWearer, g_sCard);
+            llRemoveInventory(g_sCard);
+        }
+        llSetTimerEvent(2.0);
+    }
 }
 
 PieSlice()

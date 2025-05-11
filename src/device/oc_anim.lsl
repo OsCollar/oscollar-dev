@@ -207,7 +207,11 @@ SetHover(string sStr)
     } else g_lHeightAdjustments += [g_sCurrentPose, fNewHover];
     @next;
     if (g_sCurrentPose == g_sCrawlWalk) g_fPoseMoveHover = fNewHover;
-    llMessageLinked(LINK_RLV, RLV_CMD, "adjustheight:1;0;"+(string)fNewHover+"=force", g_kWearer);
+
+    list l = llGetVisualParams(g_kWearer, ["heel_height", "platform_height"]);
+    float fHeelOffset = llList2Float(l, 0) + llList2Float(l, 1);
+    llMessageLinked(LINK_RLV, RLV_CMD, "adjustheight:1;0;"+(string)(fNewHover+fHeelOffset)+"=force", g_kWearer);
+
     string sSettings;
     integer i;
     for (i = 0; i < llGetListLength(g_lHeightAdjustments); i += 2) {
@@ -255,6 +259,10 @@ PlayAnim(string sAnim)
         integer index = llListFindList(g_lHeightAdjustments, [sAnim]);
         float fOffset = 0.0;
         if (index != -1) fOffset += llList2Float(g_lHeightAdjustments, index+1);
+
+        list l = llGetVisualParams(g_kWearer, ["heel_height", "platform_height"]);
+        fOffset += llList2Float(l, 0) + llList2Float(l, 1);
+
         llMessageLinked(LINK_RLV, RLV_CMD, "adjustheight:1;0;"+(string)fOffset+"=force", g_kWearer);
     }
     llStartAnimation(sAnim);
@@ -417,11 +425,16 @@ UserCommand(integer iNum, string sStr, key kID)
                 if (llList2String(lParams,2) == "") llMessageLinked(LINK_DIALOG, NOTIFY, "1"+"Crawl mode deactivated.", kID);
             }
         } else llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"Only owners or the wearer can change crawl settings.",kID);
+    } else if (sStr == "resetposes") {
+        // this will wipe out all custom-set height adjustments!
+        g_lHeightAdjustments = [];
+        llMessageLinked(LINK_SAVE, LM_SETTING_DELETE, "offset_hovers", "");
+        llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"All height adjustments for poses have been reset.", kID);
     } else {
         // Check if given command is a pose in inv, and if so play it
         if (llStringLength(sStr) > 63) return; // inv item names can only have up to 63 chars
         if (llGetInventoryType(sStr) != INVENTORY_ANIMATION) return;
-        // else sStr is an exact match
+        // else sStr is an exact match:
         if (iNum <= g_iLastRank || g_iAnimLock == FALSE || g_sCurrentPose == "") {
             StopAnim(g_sCurrentPose,(g_sCurrentPose != ""));
             g_sCurrentPose = sStr;
@@ -658,6 +671,9 @@ default
                 fHover = 0.0;
                 integer index = llListFindList(g_lHeightAdjustments, [g_sCurrentPose]);
                 if (index != -1) fHover = llList2Float(g_lHeightAdjustments, index+1);
+
+                list l = llGetVisualParams(g_kWearer, ["heel_height", "platform_height"]);
+                fHover += llList2Float(l, 0) + llList2Float(l, 1);
                 llMessageLinked(LINK_RLV, RLV_CMD, "adjustheight:1;0;"+(string)fHover+"=force", g_kWearer);
             }
             StartAnim(llList2String(g_lAnims,0));
