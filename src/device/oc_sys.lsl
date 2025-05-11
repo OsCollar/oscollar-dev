@@ -515,7 +515,7 @@ default {
                     else if (sMessage == "Help") UserCommand(iAuth, "help", kAv, TRUE);
                     else if (sMessage == "Update") UserCommand(iAuth, "update", kAv, TRUE);
                     else if (sMessage == "Version")
-                        g_kHttpVersion = llHTTPRequest("https://raw.githubusercontent.com/lickx/oscollar-dev/stable/web/device", [], "");
+                        g_kHttpVersion = llHTTPRequest("https://raw.githubusercontent.com/lickx/oscollar-dev/tamai/web/device", [], "");
                 } else if (sMenu == "UpdateConfirmMenu"){
                     if (sMessage=="Yes") StartUpdate();
                     else {
