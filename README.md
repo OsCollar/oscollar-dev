@@ -35,9 +35,11 @@ For help and chatter, join us on [Matrix](https://matrix.to/#/#oscollar:matrix.o
 
 #### Requirements
 
-Simulator: OpenSim 0.9.3.1 or newer
+Simulator: 0.9.3.1 or newer
+or
+Dreamgrid: 7.04 or newer
 
 - Teleporting to a sim running older versions of OpenSim may result in loss of settings (linkset data) and loss of functionality (non-running scripts)
 - Teleporting to a hypergrid sim may result in scripts to stop running and/or reset, unless the destination sim is patched
 
-General advice is to only use this on your home grid running the minimally required OpenSim version or newer.
+To avoid problems, the general advice is to only use this on your home grid meeting the minimal requirements or better.

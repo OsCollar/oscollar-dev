@@ -515,7 +515,7 @@ default {
                     else if (sMessage == "Help") UserCommand(iAuth, "help", kAv, TRUE);
                     else if (sMessage == "Update") UserCommand(iAuth, "update", kAv, TRUE);
                     else if (sMessage == "Version")
-                        g_kHttpVersion = llHTTPRequest("https://raw.githubusercontent.com/lickx/oscollar-dev/tamai/web/device", [], "");
+                        g_kHttpVersion = llHTTPRequest("https://raw.githubusercontent.com/lickx/oscollar-dev/master/web/device", [], "");
                 } else if (sMenu == "UpdateConfirmMenu"){
                     if (sMessage=="Yes") StartUpdate();
                     else {
@@ -672,7 +672,7 @@ default {
             if (compareVersions(sWebVersion, g_sCollarVersion)) {
                 llOwnerSay("An update is available!");
                 // Fetch a list of distribution sites:
-                g_kHttpDistsites = llHTTPRequest("https://raw.githubusercontent.com/lickx/oscollar-dev/tamai/web/distsites", [], "");
+                g_kHttpDistsites = llHTTPRequest("https://raw.githubusercontent.com/lickx/oscollar-dev/master/web/distsites", [], "");
             } else
                 llOwnerSay("You are using the most recent version");
         } else if (kID == g_kHttpDistsites) {
