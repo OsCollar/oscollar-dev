@@ -93,6 +93,7 @@ integer SettingExists(string sToken)
 
 list SetSetting(list lCache, string sToken, string sValue)
 {
+    llLinksetDataWrite(sToken, sValue);
     integer idx = llListFindList(lCache, [sToken]);
     if (idx != -1) return llListReplaceList(lCache, [sValue], idx+1, idx+1);
     idx = GroupIndex(lCache, sToken);
@@ -108,6 +109,7 @@ string GetSetting(string sToken)
 
 DelSetting(string sToken)
 {
+    llLinksetDataDelete(sToken);
     integer i = llGetListLength(g_lSettings) - 1;
     if (SplitToken(sToken, 1) == "all") {
         sToken = SplitToken(sToken, 0);
@@ -176,7 +178,7 @@ PrintSettings(key kID, string sDebug)
     list lOut;
     string sLinkNr = (string)llGetLinkNumber();
     string sLinkName = llGetLinkName(LINK_THIS);
-    list lSay = ["/me \nTo copy/paste the settings below in the .settings notecard (in the '"+sLinkName+"' prim, link nr. "+sLinkNr+"), make sure the device is unlocked!\n----- 8< ----- 8< ----- 8< -----\n"];
+    list lSay = ["/me \nYou can copy/paste the settings below in a notecard to be loaded as backup (in the '"+sLinkName+"' prim, link nr. "+sLinkNr+")\n----- 8< ----- 8< ----- 8< -----\n"];
     if (sDebug == "debug")
         lSay = ["/me Settings Debug:\n"];
     lSay += Add2OutList(g_lSettings, sDebug);
@@ -200,25 +202,30 @@ PrintSettings(key kID, string sDebug)
     }
 }
 
-SaveSettings(key kID)
+integer SaveCard(key kID)
 {
+    integer iRet = FALSE;
     list lOut = Add2OutList(g_lSettings, "save");
     try
     {
+        if (llGetInventoryType(g_sCard)==INVENTORY_NOTECARD)
+            llRemoveInventory(g_sCard);
         osMakeNotecard(g_sCard, lOut);
         llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"Settings saved.", kID);
+        iRet = TRUE;
     }
     catch (scriptexception ex)
     {
         string msg = yExceptionMessage(ex);
-        if (osStringStartsWith(msg, "ossl permission error", TRUE))
-            llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"Saving is not enabled on this region. Use 'Print' instead, then copy & paste to replace the contents of the settings notecard.", kID);
-        else
+        if (osStringStartsWith(msg, "ossl permission error", TRUE)) {
+            llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"Could not save the '.settings' notecard. Use 'Print' instead, then copy & paste/replace the output into a notecard called '.settings' within the storage prim - link number "+(string)llGetLinkNumber()+", link name "+llGetObjectName()+" (the %DEVICETYPE% may need to be unlocked for doing this)", kID);
+        } else
             throw;
     }
+    return iRet;
 }
 
-LoadSetting(string sData, integer iLine)
+ParseCardLine(string sData, integer iLine)
 {
     string sID;
     string sToken;
@@ -249,10 +256,75 @@ LoadSetting(string sData, integer iLine)
         for (i = 0; i < llGetListLength(lData); i += 2) {
             sToken = llList2String(lData, i);
             sValue = llList2String(lData, i+1);
-            if (sValue != "" && sID != "auth_")
-                g_lSettings = SetSetting(g_lSettings, sID+sToken, sValue);
+            if (sValue != "") {
+                if (sID == "auth_") {
+                    sToken = llToLower(sToken);
+                    if (llListFindList(["block","trust","owner"], [sToken]) != -1) {
+                        list lTest = llParseString2List(sValue, [","], []);
+                        list lOut;
+                        integer n;
+                        do {
+                            if (llList2Key(lTest, n))
+                                lOut += llList2String(lTest, n);
+                        } while (++n < llGetListLength(lTest));
+                        sValue = llDumpList2String(lOut, ",");
+                        lTest = [];
+                        lOut = [];
+                    }
+                }
+                if (sValue != "") g_lSettings = SetSetting(g_lSettings, sID + sToken, sValue);
+            }
         }
     }
+}
+
+LoadLinksetData()
+{
+    g_lSettings = []; // just to be sure
+    integer iNumTokens = llLinksetDataCountKeys();
+    list lKeys = llLinksetDataListKeys(0, iNumTokens);
+    integer i;
+    for (i = 0; i < llGetListLength(lKeys); i++)
+    {
+        string sToken = llList2String(lKeys,i);
+        string sValue = llLinksetDataRead(sToken);
+
+        if (llListFindList(g_lExceptionTokens, [SplitToken(sToken,0)]) == -1)
+        {
+            integer idx = llListFindList(g_lSettings, [sToken]);
+            if (idx != -1) {
+                g_lSettings = llListReplaceList(g_lSettings, [sValue], idx+1, idx+1);
+                continue;
+            }
+            idx = GroupIndex(g_lSettings, sToken);
+            if (idx != -1) {
+                g_lSettings = llListInsertList(g_lSettings, [sToken, sValue], idx);
+                continue;
+            }
+            g_lSettings = g_lSettings + [sToken, sValue];
+        }
+    }
+    lKeys = []; // force gc
+}
+
+PrintLinksetData()
+{
+    llOwnerSay("--- dump of linksetdata ---\n");
+    integer iNumTokens = llLinksetDataCountKeys();
+    list lKeys = llLinksetDataListKeys(0, iNumTokens);
+    integer i;
+    for (i = 0; i < llGetListLength(lKeys); i++)
+    {
+        string sKey = llList2String(lKeys,i);
+        string sValue = llLinksetDataRead(sKey);
+
+        if (llListFindList(g_lExceptionTokens, [SplitToken(sKey,0)]) == -1)
+        {
+            if (sValue != "")
+                llOwnerSay(sKey+"="+sValue+"\n");
+        }
+    }
+    lKeys = [];
 }
 
 SendValues()
@@ -269,21 +341,26 @@ SendValues()
     for (n = 0; n < llGetListLength(lOut); n++)
         llMessageLinked(LINK_ALL_OTHERS, LM_SETTING_RESPONSE, llList2String(lOut, n), "");
     llMessageLinked(LINK_ALL_OTHERS, LM_SETTING_RESPONSE, "settings=sent", "");
+    lOut = [];
 }
 
 UserCommand(integer iAuth, string sStr, key kID)
 {
     string sStrLower = llToLower(sStr);
     if (sStrLower == "print settings" || sStrLower == "debug settings") PrintSettings(kID, llGetSubString(sStrLower, 0, 4));
-    else if (llSubStringIndex(sStrLower,"load") == 0) {
+    else if (llSubStringIndex(sStrLower,"load card") == 0) {
         if (iAuth == CMD_OWNER && kID != g_kTempOwner) {
-            if (llGetInventoryKey(g_sCard) != NULL_KEY) {
+            if (llGetInventoryType(g_sCard) == INVENTORY_NOTECARD) {
                 llMessageLinked(LINK_DIALOG, NOTIFY, "0"+ "\n\nLoading backup from "+g_sCard+" card. If you want to load settings from the web, please type: /%CHANNEL% %PREFIX% load url <url>\n\n", kID);
+                llLinksetDataReset();
+                g_lSettings = [];
                 g_kLineID = llGetNotecardLine(g_sCard, g_iLineNr);
             } else llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"No "+g_sCard+" to load found.", kID);
         } else llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"%NOACCESS%", kID);
-    } else if (llSubStringIndex(sStrLower,"save") == 0) {
-        if (iAuth == CMD_OWNER) SaveSettings(kID);
+    } else if (llSubStringIndex(sStrLower,"save card") == 0) {
+        if (iAuth == CMD_OWNER) SaveCard(kID);
+    } else if (llSubStringIndex(sStrLower,"dump lsd") == 0) { // debug
+        if (iAuth == CMD_OWNER) PrintLinksetData();
     } else if (sStrLower == "reboot" || sStrLower == "reboot --f") {
         if (g_iRebootConfirmed || sStrLower == "reboot --f") {
             llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"Rebooting your %DEVICETYPE% ....", kID);
@@ -294,7 +371,16 @@ UserCommand(integer iAuth, string sStr, key kID)
             g_kConfirmDialogID = llGenerateKey();
             llMessageLinked(LINK_DIALOG, DIALOG, (string)kID+"|\nAre you sure you want to reboot the %DEVICETYPE%?|0|Yes`No|Cancel|"+(string)iAuth, g_kConfirmDialogID);
         }
-    } else if (sStrLower == "runaway") llSetTimerEvent(2.0);
+    } else if (sStrLower == "runaway") {
+        // We'll have to delete the card if we can't save a new one (with no owners set)
+        // due to no ossl permissions, otherwise old owners might still be reloaded
+        // from the old card!
+        if (llGetInventoryType(g_sCard) == INVENTORY_NOTECARD && SaveCard(g_kWearer)==FALSE) {
+            llGiveInventory(g_kWearer, g_sCard);
+            llRemoveInventory(g_sCard);
+        }
+        llSetTimerEvent(2.0);
+    }
 }
 
 PieSlice()
@@ -325,12 +411,9 @@ default
         if (llGetInventoryType("OC_Cuffs_sync") == INVENTORY_SCRIPT) llRemoveInventory("OC_Cuffs_sync");
         llSleep(0.5);
         g_kWearer = llGetOwner();
-        g_iLineNr = 0;
         if (llGetStartParameter() == 0) {
-            if (llGetInventoryType(g_sCard) == INVENTORY_NOTECARD) {
-                g_kCardID = llGetInventoryKey(g_sCard);
-                g_kLineID = llGetNotecardLine(g_sCard, g_iLineNr);
-            } else if (llGetListLength(g_lSettings) > 0) llMessageLinked(LINK_ALL_OTHERS, LM_SETTING_RESPONSE, llDumpList2String(g_lSettings, "="), "");
+            LoadLinksetData();
+            llMessageLinked(LINK_ALL_OTHERS, LM_SETTING_RESPONSE, llDumpList2String(g_lSettings, "="), "");
         }
         PieSlice();
     }
@@ -348,11 +431,11 @@ default
     {
         if (kID == g_kLineID) {
             if (sData != EOF) {
-                LoadSetting(sData, ++g_iLineNr);
+                ParseCardLine(sData, ++g_iLineNr);
                 g_kLineID = llGetNotecardLine(g_sCard, g_iLineNr);
             } else {
                 g_iLineNr = 0;
-                LoadSetting(sData, g_iLineNr);
+                ParseCardLine(sData, g_iLineNr);
                 llSetTimerEvent(2.0);
             }
         }
@@ -407,18 +490,6 @@ default
     {
         llSetTimerEvent(0.0);
         SendValues();
-    }
-
-    changed(integer iChange)
-    {
-        if ((iChange & CHANGED_INVENTORY) && llGetInventoryKey(g_sCard) != g_kCardID) {
-            // Re-read settings card if it has been changed
-            llSetTimerEvent(0.0);
-            g_iLineNr = 0;
-            g_kCardID = llGetInventoryKey(g_sCard);
-            if (g_kCardID != NULL_KEY)
-                g_kLineID = llGetNotecardLine(g_sCard, g_iLineNr);
-        }
     }
 }
 

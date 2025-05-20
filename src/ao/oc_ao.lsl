@@ -19,7 +19,7 @@
 
 // Debug(string sStr) { llOwnerSay("Debug ["+llGetScriptName()+"]: " + sStr); }
 
-string g_sVersion = "2023.09.06";
+string g_sVersion = "2025.05";
 
 integer g_iInterfaceChannel = -12587429;
 integer g_iHUDChannel = -1812221819;
@@ -83,11 +83,7 @@ integer g_iRlvListener;
 integer RLV_MAX_CHECKS = 5;
 integer g_iRLVOn = FALSE;
 
-integer g_iShoeChannel;
-integer g_iShoeListener;
-integer g_iShoesWorn;
 float g_fHeelOffset = -0.1;
-integer g_iOffsetAdjustHandle;
 
 integer g_iTimerRlvDetect;
 integer g_iTimerChangeStand;
@@ -281,18 +277,11 @@ ToggleSitAnywhere()
         if (g_iSitAnywhereOn) {
             if (g_iChangeInterval) g_iTimerChangeStand = llGetUnixTime() + g_iChangeInterval;
             SwitchStand();
-            if (g_iRLVOn) {
-                llOwnerSay("@adjustheight:1;0;0.0=force");
-                llListenRemove(g_iOffsetAdjustHandle);
-            }
+            if (g_iRLVOn) llOwnerSay("@adjustheight:1;0;0.0=force");
         } else {
             g_iTimerChangeStand = 0;
             llSetAnimationOverride("Standing",g_sSitAnywhereAnim);
-            if (g_iRLVOn) {
-                AdjustSitOffset();
-                llOwnerSay("Use /2offset <float> to adjust SitAnywhere offset in meters");
-                g_iOffsetAdjustHandle = llListen(2, "", (string)g_kWearer, "");
-            }
+            if (g_iRLVOn) AdjustSitOffset();
         }
         g_iSitAnywhereOn = !g_iSitAnywhereOn;
         DoStatus();
@@ -301,10 +290,9 @@ ToggleSitAnywhere()
 
 AdjustSitOffset()
 {
-    if (g_iShoesWorn)
-        llOwnerSay("@adjustheight:1;0;"+(string)(g_fSitOffset+g_fHeelOffset)+"=force");
-    else
-        llOwnerSay("@adjustheight:1;0;"+(string)g_fSitOffset+"=force");
+    list l = llGetVisualParams(g_kWearer, ["heel_height", "platform_height"]);
+    float fHeelOffset = llList2Float(l, 0) + llList2Float(l, 1);
+    llOwnerSay("@adjustheight:1;0;"+(string)(g_fSitOffset+fHeelOffset)+"=force");
 }
 
 Notify(key kID, string sStr, integer iAlsoNotifyWearer)
@@ -357,7 +345,7 @@ list SortButtons(list lButtons, list lStaticButtons)
 
 MenuAO(key kID)
 {
-    string sPrompt = "\n𝐎 𝐒 𝐂 𝐨 𝐥 𝐥 𝐚 𝐫  AO\t"+g_sVersion;
+    string sPrompt = "\nOsCollar - AO\t"+g_sVersion;
     list lButtons = ["LOCK"];
     if (g_iLocked) lButtons = ["UNLOCK"];
     if (kID == g_kWearer) lButtons += ["Collar Menu"];
@@ -501,11 +489,13 @@ Command(key kID, string sCommand)
         MenuLoad(kID,0);
         return;
     } else if (sCommand == "on") {
+        if ((llGetPermissions() & PERMISSION_OVERRIDE_ANIMATIONS) == 0) llRequestPermissions(g_kWearer, PERMISSION_OVERRIDE_ANIMATIONS);
         SetAnimOverride();
         g_iAO_ON = TRUE;
         if (g_iChangeInterval) g_iTimerChangeStand = llGetUnixTime() + g_iChangeInterval;
         DoStatus();
     } else if (sCommand == "off") {
+        if ((llGetPermissions() & PERMISSION_OVERRIDE_ANIMATIONS) == 0) llRequestPermissions(g_kWearer, PERMISSION_OVERRIDE_ANIMATIONS);
         llResetAnimationOverride("ALL");
         g_iAO_ON = FALSE;
         g_iTimerChangeStand = 0;
@@ -610,8 +600,6 @@ default
     state_entry()
     {
         if (llGetInventoryType("oc_installer_sys") == INVENTORY_SCRIPT) return;
-        string sObjectName = osReplaceString(llGetObjectName(), "\\d+\\.\\d+\\.?\\d+", g_sVersion, -1, 0);
-        if (sObjectName != llGetObjectName()) llSetObjectName(sObjectName);
         g_kWearer = llGetOwner();
         RestoreSettings();
         g_iInterfaceChannel = -llAbs((integer)("0x" + llGetSubString(g_kWearer,30,-1)));
@@ -631,7 +619,7 @@ default
         g_iRlvListener = llListen(519274, "", (string)g_kWearer, "");
         g_iRlvChecks = 0;
         llOwnerSay("@versionnew=519274");
-        llSetTimerEvent(5.0);
+        llSetTimerEvent(30.0);
     }
 
     on_rez(integer iStart)
@@ -651,14 +639,7 @@ default
 
     attach(key kID)
     {
-        if (kID == NULL_KEY) {
-            llResetAnimationOverride("ALL");
-            if (g_iRLVOn) {
-                // de-register worn and unworn events (if it gets through)
-                llOwnerSay("@notify:"+(string)g_iShoeChannel+";worn legally shoes=rem");
-                llOwnerSay("@notify:"+(string)g_iShoeChannel+";unworn legally shoes=rem");
-            }
-        }
+        if (kID == NULL_KEY) llResetAnimationOverride("ALL");
         else if (llGetAttached() <= 30) {
             llOwnerSay("Sorry, this device can only be attached to the HUD.");
             llRequestPermissions(kID, PERMISSION_ATTACH);
@@ -686,6 +667,7 @@ default
             } else if (sButton == "Power") {
                 if (g_iAO_ON) Command(g_kWearer, "off");
                 else if (g_iReady) Command(g_kWearer, "on");
+                StoreSettings();
             } else if (sButton == "Device") {
                 llRegionSayTo(llGetOwner(), g_iHUDChannel, "menu");
             }
@@ -722,51 +704,7 @@ default
         } else if (iChannel == 519274) {
             g_iRLVOn = TRUE;
             llListenRemove(g_iRlvListener);
-            g_iShoeChannel = (9999 + llRound(llFrand(9999999.0)));
-            llListenRemove(g_iShoeListener);
-            g_iShoeListener = llListen(g_iShoeChannel, "", (string)g_kWearer, "");
-            // get initial state of shoes worn or not:
-            llOwnerSay("@getoutfit="+(string)g_iShoeChannel);
-        } else if (iChannel==g_iShoeChannel) {
-            if (sMessage  == "/unworn legally shoes") {
-                g_iShoesWorn = FALSE;
-                if (g_iSitAnywhereOn) AdjustSitOffset();
-            } else if (sMessage == "/worn legally shoes") {
-                g_iShoesWorn = TRUE;
-                if (g_iSitAnywhereOn) AdjustSitOffset();
-            } else if (llGetSubString(sMessage, 0, 6) != "/notify") {
-                // @getoutfit result (a string of 1's and 0's)
-                string sFlagShoes = llGetSubString(sMessage, 4, 4);
-                if (sFlagShoes == "1" || sFlagShoes == "0")
-                {
-                    g_iShoesWorn = (integer)llGetSubString(sMessage, 4, 4);
-                    if (g_iSitAnywhereOn) AdjustSitOffset();
-                    // Register to be notified of worn and unworn
-                    llOwnerSay("@notify:"+(string)g_iShoeChannel+";worn legally shoes=add");
-                    llOwnerSay("@notify:"+(string)g_iShoeChannel+";unworn legally shoes=add");
-                }
-            }
-        } else if (iChannel == 2) {
-            list lCmd = llParseString2List(sMessage, [" "], []);
-            if (llStringTrim(llList2String(lCmd, 0), STRING_TRIM) != "offset") return;
-            string sParam1 = llStringTrim(llList2String(lCmd, 1), STRING_TRIM);
-            float fValue;
-            if (llGetListLength(lCmd) == 3) { // /2offset + 0.05
-                float fParam2 = (float)llList2String(lCmd, 2);
-                if (sParam1 == "+") fValue = g_fSitOffset + fParam2;
-                else if (sParam1 == "-") fValue = g_fSitOffset - fParam2;
-                else fValue = (float)sParam1; // ignore param 2
-            } else if (llGetListLength(lCmd) == 2) { // /2offset +0.05
-                float fParam2 = (float)llGetSubString(sParam1, 1, -1);
-                string sMod = llGetSubString(sParam1, 0, 0);
-                if (sMod == "+") fValue = g_fSitOffset + fParam2;
-                else if (sMod == "-") fValue = g_fSitOffset - fParam2;
-                else fValue = (float)sParam1;
-            }
-            g_fSitOffset = fValue;
-            StoreSettings();
-            AdjustSitOffset();
-            llOwnerSay("New SitAnywhere offset "+llGetSubString((string)g_fSitOffset, 0, 4)+" stored");
+            llSetTimerEvent(5.0);
         } else if (llListFindList(g_lMenuIDs,[kID, iChannel]) != -1) {
             integer iMenuIndex = llListFindList(g_lMenuIDs, [kID]);
             string sMenuType = llList2String(g_lMenuIDs, iMenuIndex+4);
@@ -840,10 +778,6 @@ default
             } else if (llListFindList(["Walking","Sitting on Ground","Sitting"], [sMenuType]) != -1) {
                 if (sMessage == "BACK") {
                     g_lAnims2Choose = [];
-                    if (sMenuType == "Sitting on Ground" && g_iSitAnywhereOn) {
-                        ToggleSitAnywhere();
-                        DoStatus();
-                    }
                     MenuAO(kID);
                 } else if (sMessage == "▲" || sMessage == "▼") {
                     if (sMessage == "▲") g_fSitOffset += 0.025;
@@ -941,6 +875,7 @@ default
                 llListenRemove(g_iRlvListener);
                 g_iRlvChecks = 0;
                 g_iRLVOn = FALSE;
+                llSetTimerEvent(5.0);
             }
         }
     }

@@ -203,7 +203,7 @@ WearFolder(string sStr, key kID)
     if (g_sCoreFolder != "") llOwnerSay("@detachallthis:"+g_sCoreFolder+"=n");
     // unwear everything that's not locked:
     llOwnerSay("@remoutfit=force,detach=force");
-    // wear clothes/parts from the core folder that are not already worn:
+    // ensure everything from core folder is worn:
     if (g_sCoreFolder != "") llOwnerSay("@attachallover:"+g_sCoreFolder+"=force");
     // wear the chosen outfit:
     llOwnerSay("@attachallover:"+sStr+"=force");
@@ -211,7 +211,6 @@ WearFolder(string sStr, key kID)
     if (g_sCoreFolder != "") llOwnerSay("@detachallthis:"+g_sCoreFolder+"=y");
     // cleanup: unlock the collar, only if it was locked temporarily
     if (g_iLocked == FALSE) llOwnerSay("@detach=y");
-    llSleep(1.5); // delay for SSA
 }
 
 doRestrictions()
@@ -565,6 +564,7 @@ default
             else if (sStr=="restrictions_blurred") g_iBlurredRestricted=FALSE;
             else if (sStr=="restrictions_dazed")   g_iDazedRestricted=FALSE;
             else if (sStr=="restrictions_dress") g_iDressRestricted=FALSE;
+            doRestrictions();
         } else if (iNum == LM_SETTING_RESPONSE) {
             list lParams = llParseString2List(sStr, ["="], []);
             string sToken = llList2String(lParams, 0);
@@ -581,6 +581,7 @@ default
                 else if (sToken=="restrictions_blurred")  g_iBlurredRestricted=(integer)sValue;
                 else if (sToken=="restrictions_dazed")    g_iDazedRestricted=(integer)sValue;
                 else if (sToken=="restrictions_dress")    g_iDressRestricted=(integer)sValue;
+                doRestrictions();
             } else if (sToken==g_sSettingToken+"corefolder") {
                 if (sValue=="none") g_sCoreFolder = "";
                 else g_sCoreFolder = sValue;

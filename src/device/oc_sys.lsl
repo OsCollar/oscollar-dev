@@ -22,7 +22,7 @@
 //on menu request, give dialog, with alphabetized list of submenus
 //on listen, send submenu link message
 
-string g_sCollarVersion="2023.09.06";
+string g_sCollarVersion="2025.05";
 
 key g_kWearer = NULL_KEY;
 
@@ -118,7 +118,7 @@ integer g_iWaitUpdate;
 integer g_iWaitRebuild;
 string g_sIntegrity = "(pending...)";
 
-string g_sHelpCard = "OsCollar Help";
+string g_sHelpCard = ".help";
 
 integer compareVersions(string v1, string v2) { //compares two symantic version strings, true if v1 >= v2
     integer v1Index = llSubStringIndex(v1, ".");
@@ -156,7 +156,7 @@ string NameGroupURI(string sStr){
 
 SettingsMenu(key kID, integer iAuth) {
     string sPrompt = "\nSettings";
-    list lButtons = ["Print","Load","Save","Fix"];
+    list lButtons = ["Print","Load Card","Save Card","Dump LSD","Fix"];
     lButtons += g_lResizeButtons;
     if (g_iHide) lButtons += ["☐ Visible"];
     else lButtons += ["☑ Visible"];
@@ -177,14 +177,17 @@ UpdateConfirmMenu() {
 HelpMenu(key kID, integer iAuth) {
     string sPrompt="\nVersion: "+g_sCollarVersion+"\n";
     sPrompt += "\nThis %DEVICETYPE% has a "+g_sIntegrity+" core.\n";
-    sPrompt += "\nScript engine: "+osGetScriptEngineName();
+    string sVersion = osGetSimulatorVersion();
+    integer idx = llSubStringIndex(sVersion, " ");
+    integer idx2 = llSubStringIndex(llGetSubString(sVersion, idx+1, -1), " ");
+    sPrompt += "\nSimulator: "+llGetSubString(sVersion, 0, idx+idx2); // strip contents of bin/.version
     list lUtility = [UPMENU];
     list lStaticButtons=["Help","Update","Version"];
     Dialog(kID, sPrompt, lStaticButtons, lUtility, 0, iAuth, "Help/About");
 }
 
 MainMenu(key kID, integer iAuth) {
-    string sPrompt = "\n𝐎 𝐒 𝐂 𝐨 𝐥 𝐥 𝐚 𝐫\t"+g_sCollarVersion+"\n";
+    string sPrompt = "\nOsCollar\t"+g_sCollarVersion+"\n";
     sPrompt += "\nPrefix: %PREFIX%\nChannel: %CHANNEL%\nSafeword: "+g_sSafeWord;
     list lStaticButtons = ["Apps"];
     if (g_iAnimsMenu) lStaticButtons += "Animations";
@@ -444,8 +447,6 @@ default {
     state_entry() {
         g_kWearer = llGetOwner();
         if (llGetInventoryType("oc_installer_sys")==INVENTORY_SCRIPT) return;
-        string sObjectName = osReplaceString(llGetObjectName(), "\\d+\\.\\d+\\.?\\d+", g_sCollarVersion, -1, 0);
-        if (sObjectName != llGetObjectName()) llSetObjectName(sObjectName);
         g_iHide = !(integer)llGetAlpha(ALL_SIDES);
         if (llGetListLength(g_lCacheAlpha) == 0) RebuildCaches(); // no dummy pair, so cache lost, rebuild
         init();
@@ -523,8 +524,9 @@ default {
                     }
                 } else if (sMenu == "Settings") {
                     if (sMessage == "Print") llMessageLinked(LINK_SAVE, iAuth, "print settings", kAv);
-                    else if (sMessage == "Load") llMessageLinked(LINK_SAVE, iAuth, sMessage, kAv);
-                    else if (sMessage == "Save") llMessageLinked(LINK_SAVE, iAuth, sMessage, kAv);
+                    else if (sMessage == "Load Card") llMessageLinked(LINK_SAVE, iAuth, sMessage, kAv);
+                    else if (sMessage == "Save Card") llMessageLinked(LINK_SAVE, iAuth, sMessage, kAv);
+                    else if (sMessage == "Dump LSD") llMessageLinked(LINK_SAVE, iAuth, sMessage, kAv);
                     else if (sMessage == "Fix") {
                          UserCommand(iAuth, sMessage, kAv, TRUE);
                          return;
