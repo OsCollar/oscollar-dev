@@ -2,10 +2,6 @@
 
 OsCollar is a set of gadgets for submission roleplay for use in the OpenSim metaverse
 
-Grid and sim owners might want to read [opensim patches](doc/opensim-patches.md)
-
-For help and chatter, join us on [Matrix](https://matrix.to/#/#oscollar:matrix.org)
-
 
 #### Finding your way around this repo
 ```
