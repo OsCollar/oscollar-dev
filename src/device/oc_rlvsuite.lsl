@@ -203,7 +203,7 @@ WearFolder(string sStr, key kID)
     if (g_sCoreFolder != "") llOwnerSay("@detachallthis:"+g_sCoreFolder+"=n");
     // unwear everything that's not locked:
     llOwnerSay("@remoutfit=force,detach=force");
-    // attach core folder if exists
+    // ensure everything from core folder is worn:
     if (g_sCoreFolder != "") llOwnerSay("@attachallover:"+g_sCoreFolder+"=force");
     // wear the chosen outfit:
     llOwnerSay("@attachallover:"+sStr+"=force");

@@ -379,7 +379,7 @@ default
         llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"If you would like to stop the animation early, say /" + (string)g_iStopChan + g_sStopString + " to stop.", g_kPartner);
         string sText = llList2String(g_lAnimSettings, (g_iCmdIndex*4) + 3);
         if (sText != "" && g_iVerbose) {
-            sText = llReplaceSubString(sText, "_PARTNER_", g_sPartnerName, 0);
+            sText = llReplaceSubString(sText, "_PARTNER_" ,g_sPartnerName, 0);
             sText = llReplaceSubString(sText, "_SELF_", "%WEARERNAME%", 0);
             llMessageLinked(LINK_DIALOG,SAY, "0"+sText, "");
         }

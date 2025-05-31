@@ -103,7 +103,7 @@ AuthMenu(key kAv, integer iAuth)
     integer iPercentage = llRound(((float)llGetListLength(g_lOwner+g_lTrust+g_lBlock)/(float)g_iMaxUsers)*100.0);
     sPrompt += "\n\nYou are using "+(string)iPercentage+"% of your global access list storage.";
     list lButtons;
-    lButtons = ["+ Owner", "+ Trust", "+ Block", "− Owner", "− Trust", "− Block"];
+    lButtons += ["+ Owner", "+ Trust", "+ Block", "− Owner", "− Trust", "− Block"];
     if (g_kGroup==NULL_KEY) lButtons += ["Group ☐"];
     else lButtons += ["Group ☑"];
     if (g_iOpenAccess) lButtons += ["Public ☑"];
@@ -666,5 +666,6 @@ default
             else if (sStr == "LINK_REQUEST") llMessageLinked(LINK_ALL_OTHERS,LINK_UPDATE,"LINK_AUTH","");
         } else if (iNum == REBOOT && sStr == "reboot") llResetScript();
     }
+
 }
 

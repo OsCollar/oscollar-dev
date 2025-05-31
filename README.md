@@ -2,10 +2,6 @@
 
 OsCollar is a set of gadgets for submission roleplay for use in the OpenSim metaverse
 
-Grid and sim owners might want to read [opensim patches](doc/opensim-patches.md)
-
-For help and chatter, join us on [Matrix](https://matrix.to/#/#oscollar:matrix.org)
-
 
 #### Finding your way around this repo
 ```
@@ -29,13 +25,17 @@ For help and chatter, join us on [Matrix](https://matrix.to/#/#oscollar:matrix.o
         > installer: The source code for the updater aka patch
         > remote: The source code for the remote control HUD.
         > spares: Spares and snippets for research and development.
+
+    > web: Files for the updater check within the Help/About menu
 ```
 
 #### Requirements
 
-Simulator: OpenSim 0.9.1.0 or newer
-XEngine or YEngine (YEngine strongly recommended!)
+Simulator: 0.9.3.1 or newer
+or
+Dreamgrid: 7.04 or newer
 
-Note that as soon as YEngine becomes the default in a forthcoming OpenSim release, we will drop XEngine support. High quality grids already have set YEngine as default, or at least give simowners the option to enable it.
+- Teleporting to a sim running older versions of OpenSim may result in loss of settings (linkset data) and loss of functionality (non-running scripts)
+- Teleporting to a hypergrid sim may result in scripts to stop running and/or reset, unless the destination sim is patched
 
-UUIDs referenced by code and notecards refer to assets on the OsGrid.org asset server
+To avoid problems, the general advice is to only use this on your home grid meeting the minimal requirements or better.
