@@ -208,7 +208,9 @@ SetHover(string sStr)
     @next;
     if (g_sCurrentPose == g_sCrawlWalk) g_fPoseMoveHover = fNewHover;
 
-    llMessageLinked(LINK_RLV, RLV_CMD, "adjustheight:1;0;"+(string)fNewHover+"=force", g_kWearer);
+    list l = llGetVisualParams(g_kWearer, ["heel_height", "platform_height"]);
+    float fHeelOffset = (llList2Float(l, 0) + llList2Float(l, 1)) / 100.0;
+    llMessageLinked(LINK_RLV, RLV_CMD, "adjustheight:1;0;"+(string)(fNewHover+fHeelOffset)+"=force", g_kWearer);
 
     string sSettings;
     integer i;
@@ -257,6 +259,9 @@ PlayAnim(string sAnim)
         integer index = llListFindList(g_lHeightAdjustments, [sAnim]);
         float fOffset = 0.0;
         if (index != -1) fOffset += llList2Float(g_lHeightAdjustments, index+1);
+
+        list l = llGetVisualParams(g_kWearer, ["heel_height", "platform_height"]);
+        fOffset += (llList2Float(l, 0) + llList2Float(l, 1)) / 100.0;
 
         llMessageLinked(LINK_RLV, RLV_CMD, "adjustheight:1;0;"+(string)fOffset+"=force", g_kWearer);
     }
@@ -667,6 +672,8 @@ default
                 integer index = llListFindList(g_lHeightAdjustments, [g_sCurrentPose]);
                 if (index != -1) fHover = llList2Float(g_lHeightAdjustments, index+1);
 
+                list l = llGetVisualParams(g_kWearer, ["heel_height", "platform_height"]);
+                fHover += ((llList2Float(l, 0) + llList2Float(l, 1)) / 100.0);
                 llMessageLinked(LINK_RLV, RLV_CMD, "adjustheight:1;0;"+(string)fHover+"=force", g_kWearer);
             }
             StartAnim(llList2String(g_lAnims,0));

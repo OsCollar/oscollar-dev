@@ -83,8 +83,6 @@ integer g_iRlvListener;
 integer RLV_MAX_CHECKS = 5;
 integer g_iRLVOn = FALSE;
 
-float g_fHeelOffset = -0.1;
-
 integer g_iTimerRlvDetect;
 integer g_iTimerChangeStand;
 integer g_iTimerDialogTimeout;
@@ -289,7 +287,9 @@ ToggleSitAnywhere()
 
 AdjustSitOffset()
 {
-    llOwnerSay("@adjustheight:1;0;"+(string)g_fSitOffset+"=force");
+    list l = llGetVisualParams(g_kWearer, ["heel_height", "platform_height"]);
+    float fHeelOffset = (llList2Float(l, 0) + llList2Float(l, 1)) / 100.0;
+    llOwnerSay("@adjustheight:1;0;"+(string)(g_fSitOffset+fHeelOffset)+"=force");
 }
 
 Notify(key kID, string sStr, integer iAlsoNotifyWearer)
