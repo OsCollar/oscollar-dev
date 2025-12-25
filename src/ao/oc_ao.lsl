@@ -19,7 +19,7 @@
 
 // Debug(string sStr) { llOwnerSay("Debug ["+llGetScriptName()+"]: " + sStr); }
 
-string g_sVersion = "2025.05";
+string g_sVersion = "2025.12";
 
 integer g_iInterfaceChannel = -12587429;
 integer g_iHUDChannel = -1812221819;
@@ -82,8 +82,6 @@ integer g_iRlvChecks;
 integer g_iRlvListener;
 integer RLV_MAX_CHECKS = 5;
 integer g_iRLVOn = FALSE;
-
-float g_fHeelOffset = -0.1;
 
 integer g_iTimerRlvDetect;
 integer g_iTimerChangeStand;
@@ -291,7 +289,7 @@ ToggleSitAnywhere()
 AdjustSitOffset()
 {
     list l = llGetVisualParams(g_kWearer, ["heel_height", "platform_height"]);
-    float fHeelOffset = llList2Float(l, 0) + llList2Float(l, 1);
+    float fHeelOffset = (llList2Float(l, 0) + llList2Float(l, 1)) / 100.0;
     llOwnerSay("@adjustheight:1;0;"+(string)(g_fSitOffset+fHeelOffset)+"=force");
 }
 
