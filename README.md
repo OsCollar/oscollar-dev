@@ -23,7 +23,7 @@ OsCollar is a set of gadgets for submission roleplay for use in the OpenSim meta
         > device: Everything you need for a full featured device
         > extensions: Enhanced features that can be added to a device
         > installer: The source code for the updater aka patch
-        > remote: The source code for the remote control HUD.
+        > ownerhud: The source code for the owner HUD.
         > spares: Spares and snippets for research and development.
 
     > web: Files for the updater check within the Help/About menu
