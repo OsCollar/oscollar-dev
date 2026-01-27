@@ -1,6 +1,6 @@
 ### Welcome to OsCollar
 
-OsCollar is a set of gadgets for submission roleplay for use in the OpenSim metaverse
+OsCollar is a set of gadgets for submission roleplay for use in OpenSim grids
 
 
 #### Finding your way around this repo
@@ -18,12 +18,12 @@ OsCollar is a set of gadgets for submission roleplay for use in the OpenSim meta
 
     > src: Source code of the OsCollar role play device.
 
-        > ao: The source code for the animation overrider.
+        > ao: The source code for the animation overrider HUD.
         > apps: Fun features you can add to your device
         > device: Everything you need for a full featured device
         > extensions: Enhanced features that can be added to a device
         > installer: The source code for the updater aka patch
-        > ownerhud: The source code for the owner HUD.
+        > remote: The source code for the Remote HUD.
         > spares: Spares and snippets for research and development.
 
     > web: Files for the updater check within the Help/About menu
@@ -31,11 +31,11 @@ OsCollar is a set of gadgets for submission roleplay for use in the OpenSim meta
 
 #### Requirements
 
-Simulator: 0.9.3.1 or newer
-or
-Dreamgrid: 7.04 or newer
+Simulator 0.9.3.1 or newer  
+or  
+Dreamgrid 7.04 or newer  
 
 - Teleporting to a sim running older versions of OpenSim may result in loss of settings (linkset data) and loss of functionality (non-running scripts)
 - Teleporting to a hypergrid sim may result in scripts to stop running and/or reset, unless the destination sim is patched
 
-To avoid problems, the general advice is to only use this on your home grid meeting the minimal requirements or better.
+To avoid problems, only use this on your home grid meeting the minimal requirements or better.

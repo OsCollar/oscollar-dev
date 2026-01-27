@@ -18,8 +18,6 @@
 //  along with this script; if not, see www.gnu.org/licenses/gpl-2.0
 //
 
-// Debug(string sStr) { llOwnerSay("Debug ["+llGetScriptName()+"]: " + sStr); }
-
 //chopped from the OpenCollar_Dialog script in slimmer shape for the Owner HUD june 2015 Otto (garvin.twine)
 
 //an adaptation of Schmobag Hogfather's SchmoDialog script
