@@ -22,7 +22,7 @@
 
 // Debug(string sStr) { llOwnerSay("Debug ["+llGetScriptName()+"]: " + sStr); }
 
-string g_sAppVersion = "2023.03.29";
+string g_sAppVersion = "2026.02";
 
 string g_sParentMenu = "Apps";
 string g_sSubMenu = "Label";
@@ -68,7 +68,7 @@ list g_lFonts;
 string g_sFontTexture = "font_System 01";
 
 integer x = 45;
-integer y = 19;
+integer y = 20;
 
 integer g_iNumFaces = 6;
 
