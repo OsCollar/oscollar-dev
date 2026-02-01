@@ -22,7 +22,7 @@
 //on menu request, give dialog, with alphabetized list of submenus
 //on listen, send submenu link message
 
-string g_sCollarVersion="2025.12";
+string g_sCollarVersion="2026.02";
 
 key g_kWearer = NULL_KEY;
 
@@ -87,11 +87,6 @@ integer g_iLocked = FALSE;
 integer g_bDetached = FALSE;
 integer g_iHide ; // global hide
 
-list g_lCacheAlpha; // integer link, float alpha. for preserving transparent links when unhiding the device
-list g_lCacheGlows; // integer link, float glow. for restoring links with glow when unhiding the device
-
-list g_lClosedLockElements; // integer link. links to show when device locked
-list g_lOpenLockElements; // integer link. links to show when device unlocked
 string g_sDefaultLockSound="sound_lock";
 string g_sDefaultUnlockSound="sound_unlock";
 string g_sLockSound="sound_lock";
@@ -243,7 +238,6 @@ UserCommand(integer iNum, string sStr, key kID, integer fromMenu) {
             g_iLocked = TRUE;
             llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sGlobalToken+"locked=1", "");
             llMessageLinked(LINK_ROOT, LM_SETTING_RESPONSE, g_sGlobalToken+"locked=1", "");
-            llOwnerSay("@detach=n");
             llMessageLinked(LINK_RLV, RLV_CMD, "detach=n", "main");
             llPlaySound(g_sLockSound, 1.0);
             SetLockElementAlpha();//EB
@@ -256,7 +250,6 @@ UserCommand(integer iNum, string sStr, key kID, integer fromMenu) {
             g_iLocked = FALSE;
             llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sGlobalToken+"locked=0", "");
             llMessageLinked(LINK_ROOT, LM_SETTING_RESPONSE, g_sGlobalToken+"locked=0", "");
-            llOwnerSay("@detach=y");
             llMessageLinked(LINK_RLV, RLV_CMD, "detach=y", "main");
             llPlaySound(g_sUnlockSound, 1.0);
             SetLockElementAlpha(); //EB
@@ -270,9 +263,13 @@ UserCommand(integer iNum, string sStr, key kID, integer fromMenu) {
             llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"Menus have been fixed!", kID);
         //} else llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"%NOACCESS%",kID);
     } else if (sCmd == "stealth") Stealth(!g_iHide);
-    else if (sCmd == "hide") Stealth(TRUE);
-    else if (sCmd == "show") Stealth(FALSE);
-    else if (sCmd == "update") {
+    else if (sCmd == "hide") {
+        Stealth(TRUE);
+        if (fromMenu) SettingsMenu(kID, iNum);
+    } else if (sCmd == "show") {
+        Stealth(FALSE);
+        if (fromMenu) SettingsMenu(kID, iNum);
+    } else if (sCmd == "update") {
         if (kID == g_kWearer) {
             g_iWillingUpdaters = 0;
             g_kCurrentUser = kID;
@@ -330,20 +327,25 @@ string GetTimestamp() {
 SetLockElementAlpha() { //EB
     if (g_iHide) return ; // ***** if collar is hide, don't do anything
     //loop through stored links, setting alpha if element type is lock
-    integer n;
-    integer iLinkElements = llGetListLength(g_lOpenLockElements);
-    for (n = 0; n < iLinkElements; n++) {
-        llSetLinkAlpha(llList2Integer(g_lOpenLockElements,n), !g_iLocked, ALL_SIDES);
-        integer idx = llListFindList(g_lCacheGlows, [n]);
-        if (idx != -1 && (idx %2 == 0))
-            llSetLinkPrimitiveParamsFast(n, [PRIM_GLOW, ALL_SIDES, llList2Float(g_lCacheGlows, idx+1)]);
-    }
-    iLinkElements = llGetListLength(g_lClosedLockElements);
-    for (n=0; n < iLinkElements; n++) {
-        llSetLinkAlpha(llList2Integer(g_lClosedLockElements,n), g_iLocked, ALL_SIDES);
-        integer idx = llListFindList(g_lCacheGlows, [n]);
-        if (idx != -1 && (idx %2 == 0))
-            llSetLinkPrimitiveParamsFast(n, [PRIM_GLOW, ALL_SIDES, llList2Float(g_lCacheGlows, idx+1)]);
+    integer iLink;
+    for (iLink = LINK_ROOT; iLink < llGetNumberOfPrims(); iLink++) {
+        string sName = llGetLinkName(iLink);
+        if (sName=="Lock") llSetLinkAlpha(iLink, !g_iLocked, ALL_SIDES); // openlockelement
+        else if (sName=="ClosedLock") llSetLinkAlpha(iLink, g_iLocked, ALL_SIDES);
+        else jump next;
+        // restore glow (if any):
+        list lPrimParams = llGetLinkPrimitiveParams(iLink, [PRIM_TEXT, PRIM_DESC]);
+        list sDesc = llList2String(lPrimParams, 3);
+        if (llSubStringIndex(sDesc, "noglow") == -1)
+        {
+            list lText = llParseString2List(llList2String(lPrimParams, 0), ["~","="], []);
+            integer idx = llListFindList(lText, ["glow"]);
+            if (idx != -1) {
+                float fGlow = llList2Float(lText, idx+1);
+                if (fGlow > 0.0) llSetLinkPrimitiveParamsFast(iLink, [PRIM_GLOW, ALL_SIDES, fGlow]);
+            }
+        }
+        @next;
     }
 }
 
@@ -360,68 +362,50 @@ RebuildMenu() {
     llMessageLinked(LINK_ALL_OTHERS, LINK_UPDATE,"LINK_REQUEST","");
 }
 
-RebuildCaches() {
-    g_lCacheAlpha = [-1000, 0.1]; // dummy pair to detect if we lost the lists due to state loss
-    g_lCacheGlows = [];
-    g_lOpenLockElements = [];
-    g_lClosedLockElements = [];
-
-    integer iLink;
-    integer idx;
-    for (iLink = LINK_ROOT; iLink < llGetNumberOfPrims(); iLink++) {
-        list lLinkParams = llGetLinkPrimitiveParams(iLink, [PRIM_DESC, PRIM_COLOR, 0, PRIM_GLOW, 0]);
-        // ^^ returns string desc, vector color, float alpha, float glow. note ALL_SIDES doesn't work on OS, so we use side 0.
-        string sDesc = llList2String(lLinkParams, 0);
-        list lSettings = llParseString2List(llToLower(sDesc), ["~"], []);
-
-        // is hidden? has alpha?
-        idx = llListFindList(lSettings, ["hidden"]);
-        if (idx != -1) g_lCacheAlpha += [iLink, 0.0]; // found hidden setting in prim desc, state-loss-safe.
-        else {
-            idx = llListFindList(lSettings, ["alpha"]);
-            if (idx != -1) g_lCacheAlpha += [iLink, llList2Float(lSettings, idx+1)]; // found desc alpha~f setting
-            else if (g_iHide == FALSE) {
-                // backup method, get alpha from prim if collar not hidden yet. NOT state-loss-safe!
-                float fAlpha = llList2Float(lLinkParams,2);
-                if (fAlpha < 1.0) g_lCacheAlpha += [iLink, fAlpha];
-            }
-        }
-        // has glows?
-        idx = llListFindList(lSettings, ["glow"]);
-        if (idx != -1) g_lCacheGlows += [iLink, llList2Float(lSettings, idx+1)]; // found desc glow~f setting
-        else if (g_iHide == FALSE) {
-            // backup method: get glow from prim if collar not hidden yet. NOT state-loss-safe!
-            float fGlow = llList2Float(lLinkParams, 3);
-            if (fGlow > 0) g_lCacheGlows += [iLink, fGlow];
-        }
-        // is a lock prim?
-        list lPrimName = llParseString2List(llGetLinkName(iLink), ["~"], []);
-        if (llListFindList(lPrimName, ["Lock"]) != -1 || llListFindList(lPrimName, ["ClosedLock"]) != -1)
-            g_lClosedLockElements += [iLink];
-        else if (llListFindList(lPrimName, ["OpenLock"]) != -1)
-            g_lOpenLockElements += [iLink];
-    }
-}
-
 Stealth(integer iHide) {
-    if (llGetListLength(g_lCacheAlpha) == 0) RebuildCaches(); // cache lost, rebuild
     if (iHide) {
+        integer iLink;
+        integer idx;
+        for (iLink = LINK_ROOT; iLink < llGetNumberOfPrims(); iLink++) {
+            list lPrimParams = llGetLinkPrimitiveParams(iLink, [PRIM_DESC, PRIM_COLOR, 0, PRIM_GLOW, 0]);
+            // ^^ returns [desc, color, alpha, glow]. note ALL_SIDES doesn't work on OS, so we use side 0.
+            string sText; // stored as key1=value1~key2=value2
+            string sDesc = llList2String(lPrimParams, 0);
+
+            if (llSubStringIndex(sDesc, "hidden") == -1 || llSubStringIndex(sDesc, "nohide") == -1) {
+                float fAlpha = llList2Float(lPrimParams,2);
+                if (fAlpha < 1.0) sText = "alpha="+(string)fAlpha;
+            }
+            if (llSubStringIndex(sDesc, "noglow") == -1) {
+                float fGlow = llList2Float(lPrimParams, 3);
+                if (fGlow > 0.0) sText += "~glow="+(string)fGlow;
+            }
+            llSetLinkPrimitiveParamsFast(iLink, [PRIM_TEXT, sText, <1,1,1>, 0.0]);
+        }
+        // Finally, hide:
         llSetLinkPrimitiveParamsFast(LINK_SET, [PRIM_GLOW, ALL_SIDES, 0.0]);
         llSetLinkAlpha(LINK_SET, 0.0, ALL_SIDES);
     } else { // Show
         integer iLink;
         for (iLink = LINK_ROOT; iLink < llGetNumberOfPrims(); iLink++) {
-            // restore alpha's:
-            integer idx = llListFindList(g_lCacheAlpha, [iLink]);
-            if (idx != -1 && (idx % 2 == 0)) {
-                float fAlpha = llList2Float(g_lCacheAlpha, idx+1);
-                llSetLinkAlpha(iLink, fAlpha, ALL_SIDES);
-            } else llSetLinkAlpha(iLink, 1.0, ALL_SIDES);
-            // restore glows:
-            idx = llListFindList(g_lCacheGlows, [iLink]);
-            if (idx != -1 && (idx %2 == 0)) {
-                float fGlow = llList2Float(g_lCacheGlows, idx+1);
-                llSetLinkPrimitiveParamsFast(iLink, [PRIM_GLOW, ALL_SIDES, fGlow]);
+            list lPrimParams = llGetLinkPrimitiveParams(iLink, [PRIM_TEXT,PRIM_DESC]);
+            // lPrimParams returns: [hovertext, hovercolor, hoveralpha, desc]
+            list lText = llParseString2List(llList2String(lPrimParams, 0), ["~","="], []);
+            string sDesc = llList2String(lPrimParams, 3);
+
+            if (llSubStringIndex(sDesc, "hidden") == -1 || llSubStringIndex(sDesc, "nohide") == -1) {
+                integer idx = llListFindList(lText, ["alpha"]);
+                if (idx != -1) {
+                    float fAlpha = (float)llList2String(lText, idx+1);
+                    llSetLinkAlpha(iLink, fAlpha, ALL_SIDES); // show alpha'd
+                } else llSetLinkAlpha(iLink, 1.0, ALL_SIDES); // show all
+            }
+            if (llSubStringIndex(sDesc, "noglow") == -1) {
+                integer idx = llListFindList(lText, ["glow"]);
+                if (idx != -1) {
+                    float fGlow = (float)llList2String(lText, idx+1);
+                    llSetLinkPrimitiveParamsFast(iLink, [PRIM_GLOW, ALL_SIDES, fGlow]);
+                }
             }
         }
     }
@@ -433,8 +417,6 @@ Stealth(integer iHide) {
 init() {
     g_iWaitRebuild = TRUE;
     llSetTimerEvent(1.0);
-    if (g_iLocked) llOwnerSay("@detach=n");
-    SetLockElementAlpha();
 }
 
 StartUpdate() {
@@ -448,7 +430,6 @@ default {
         g_kWearer = llGetOwner();
         if (llGetInventoryType("oc_installer_sys")==INVENTORY_SCRIPT) return;
         g_iHide = !(integer)llGetAlpha(ALL_SIDES);
-        if (llGetListLength(g_lCacheAlpha) == 0) RebuildCaches(); // no dummy pair, so cache lost, rebuild
         init();
         //Debug("Starting");
     }
@@ -515,7 +496,7 @@ default {
                     else if (sMessage == "Help") UserCommand(iAuth, "help", kAv, TRUE);
                     else if (sMessage == "Update") UserCommand(iAuth, "update", kAv, TRUE);
                     else if (sMessage == "Version")
-                        g_kHttpVersion = llHTTPRequest("https://raw.githubusercontent.com/lickx/oscollar-dev/master/web/device", [], "");
+                        g_kHttpVersion = llHTTPRequest("https://raw.githubusercontent.com/OsCollar/oscollar-dev/master/web/device", [], "");
                 } else if (sMenu == "UpdateConfirmMenu"){
                     if (sMessage=="Yes") StartUpdate();
                     else {
@@ -531,11 +512,11 @@ default {
                          UserCommand(iAuth, sMessage, kAv, TRUE);
                          return;
                     } else if (sMessage == "☑ Visible") {
-                        Stealth(TRUE);
-                        llMessageLinked(LINK_ROOT, iAuth, "hide", kAv);
+                        UserCommand(iAuth, "hide", kAv, TRUE);
+                        return;
                     } else if (sMessage == "☐ Visible") {
-                        Stealth(FALSE);
-                        llMessageLinked(LINK_ROOT, iAuth, "show", kAv);
+                        UserCommand(iAuth, "show", kAv, TRUE);
+                        return;
                     } else if (sMessage == "Themes") {
                         llMessageLinked(LINK_ROOT, iAuth, "menu Themes", kAv);
                         return;
@@ -559,7 +540,7 @@ default {
             string sValue = llList2String(lParams, 1);
             if (sToken == g_sGlobalToken+"locked") {
                 g_iLocked = (integer)sValue;
-                if (g_iLocked) llOwnerSay("@detach=n");
+                if (g_iLocked) llMessageLinked(LINK_RLV, RLV_CMD, "detach=n", "main");
                 SetLockElementAlpha();
             } else if (sToken == "intern_integrity") g_sIntegrity = sValue;
             else if (sToken == "intern_looks") g_iLooks = (integer)sValue;
@@ -570,12 +551,16 @@ default {
                 if (sValue=="default") g_sUnlockSound=g_sDefaultUnlockSound;
                 else if ((key)sValue!=NULL_KEY || llGetInventoryType(sValue)==INVENTORY_SOUND) g_sUnlockSound=sValue;
             } else if (sToken == g_sGlobalToken+"safeword") g_sSafeWord = sValue;
+            else if (sToken == g_sGlobalToken+"stealth") g_iHide = (integer)sValue;
         } else if (iNum == DIALOG_TIMEOUT) {
             integer iMenuIndex = llListFindList(g_lMenuIDs, [kID]);
             g_lMenuIDs = llDeleteSubList(g_lMenuIDs, iMenuIndex-1, iMenuIndex-2 + g_iMenuStride);
-        } else if (iNum == RLV_REFRESH || iNum == RLV_CLEAR) {
+        } else if (iNum == RLV_REFRESH) {
             if (g_iLocked) llMessageLinked(LINK_RLV, RLV_CMD, "detach=n", "main");
             else llMessageLinked(LINK_RLV, RLV_CMD, "detach=y", "main");
+            SetLockElementAlpha();
+        } else if (iNum == RLV_CLEAR) {
+            if (g_iLocked) llMessageLinked(LINK_RLV, RLV_CMD, "detach=y", "main");
         } else if (iNum == REBOOT && sStr == "reboot") llResetScript();
     }
 
@@ -596,14 +581,10 @@ default {
             integer iNewHide=!(integer)llGetAlpha(ALL_SIDES) ; //check alpha
             if (g_iHide != iNewHide){   //check there's a difference to avoid infinite loop
                 g_iHide = iNewHide;
-                RebuildCaches();
                 SetLockElementAlpha(); // update hide elements
             }
         }
-        if (iChange & CHANGED_LINK) {
-            llMessageLinked(LINK_ALL_OTHERS,LINK_UPDATE,"LINK_REQUEST","");
-            RebuildCaches();
-        }
+        if (iChange & CHANGED_LINK) llMessageLinked(LINK_ALL_OTHERS,LINK_UPDATE,"LINK_REQUEST","");
         if (iChange & CHANGED_REGION) llMessageLinked(LINK_ALL_OTHERS,REGION_CROSSED,"","");
         if (iChange & CHANGED_TELEPORT) llMessageLinked(LINK_ALL_OTHERS,REGION_TELEPORT,"","");
     }
@@ -612,7 +593,7 @@ default {
         if (g_iLocked) {
             if(kID == NULL_KEY) {
                 g_bDetached = TRUE;
-                llMessageLinked(LINK_DIALOG,NOTIFY_OWNERS, "%WEARERNAME% has attached me while locked at "+GetTimestamp()+"!",kID);
+                llMessageLinked(LINK_DIALOG,NOTIFY_OWNERS, "%WEARERNAME% has detached me while locked at "+GetTimestamp()+"!",kID);
             } else {
                 if (g_bDetached)
                     llMessageLinked(LINK_DIALOG,NOTIFY_OWNERS, "%WEARERNAME% has re-attached me at "+GetTimestamp()+"!",kID);
@@ -672,7 +653,7 @@ default {
             if (compareVersions(sWebVersion, g_sCollarVersion)) {
                 llOwnerSay("An update is available!");
                 // Fetch a list of distribution sites:
-                g_kHttpDistsites = llHTTPRequest("https://raw.githubusercontent.com/lickx/oscollar-dev/master/web/distsites", [], "");
+                g_kHttpDistsites = llHTTPRequest("https://raw.githubusercontent.com/OsCollar/oscollar-dev/master/web/distsites", [], "");
             } else
                 llOwnerSay("You are using the most recent version");
         } else if (kID == g_kHttpDistsites) {
