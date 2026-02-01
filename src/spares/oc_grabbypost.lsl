@@ -245,7 +245,7 @@ default
             if(k!=menuUser)
             {
                 // calculate collar channel per victim and add a listener
-                channel=PersonalChannel((string)k,0);
+                channel=PersonalChannel((string)k,1234);
                 listeners+=
                 [
                     llListen(channel,"",NULL_KEY,"")

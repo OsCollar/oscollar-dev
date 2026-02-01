@@ -18,8 +18,6 @@
 //  along with this script; if not, see www.gnu.org/licenses/gpl-2.0
 //
 
-// Debug(string sStr) { llOwnerSay("Debug ["+llGetScriptName()+"]: " + sStr); }
-
 //Adjusted to OpenCollar name convention und format standards June 2015 Otto (garvin.twine)
 //Updated Romka(romka.swallowtail)
 
@@ -292,7 +290,7 @@ DoMenu(string sMenu)
         lUtils = ["Reset", UPMENU];
     }
     if (sMenu == g_sHudMenu) { // Main
-        sPrompt = "\nCustomize your Owner HUD!";
+        sPrompt = "\nCustomize your Remote!";
         lButtons = ["Rows: "+(string)g_iRows] ;
         if (g_iRows > 1) lButtons += llList2List(["Columns >","Alternate >"], g_iColumn, g_iColumn) ;
         else lButtons += [" - "] ;
@@ -416,7 +414,7 @@ default
             string sButton = llList2String(lParams, 1);
             //integer iPage = llList2Integer(lParams, 2);
             if (g_sCurrentMenu == g_sHudMenu) {   // -- Inside the 'Options' menu, or 'submenu'
-                // If we press the 'Back' and we are inside the Options menu, go back to OwnerHUD menu
+                // If we press the 'Back' and we are inside the Options menu, go back to Remote menu
                 if (sButton == UPMENU) {
                     llMessageLinked(LINK_SET, SUBMENU, g_sParentMenu, kID);
                     return;
