@@ -371,16 +371,17 @@ Stealth(integer iHide) {
             // ^^ returns [desc, color, alpha, glow]. note ALL_SIDES doesn't work on OS, so we use side 0.
             string sText; // stored as key1=value1~key2=value2
             string sDesc = llList2String(lPrimParams, 0);
-
-            if (llSubStringIndex(sDesc, "hidden") == -1 || llSubStringIndex(sDesc, "nohide") == -1) {
-                float fAlpha = llList2Float(lPrimParams,2);
-                if (fAlpha < 1.0) sText = "alpha="+(string)fAlpha;
+            if (llSubStringIndex(sDesc, "FloatText") != 0) { // ignore titler prim
+                if (llSubStringIndex(sDesc, "hidden") == -1 || llSubStringIndex(sDesc, "nohide") == -1) {
+                    float fAlpha = llList2Float(lPrimParams,2);
+                    if (fAlpha < 1.0) sText = "alpha="+(string)fAlpha;
+                }
+                if (llSubStringIndex(sDesc, "noglow") == -1) {
+                    float fGlow = llList2Float(lPrimParams, 3);
+                    if (fGlow > 0.0) sText += "~glow="+(string)fGlow;
+                }
+                llSetLinkPrimitiveParamsFast(iLink, [PRIM_TEXT, sText, <1,1,1>, 0.0]);
             }
-            if (llSubStringIndex(sDesc, "noglow") == -1) {
-                float fGlow = llList2Float(lPrimParams, 3);
-                if (fGlow > 0.0) sText += "~glow="+(string)fGlow;
-            }
-            llSetLinkPrimitiveParamsFast(iLink, [PRIM_TEXT, sText, <1,1,1>, 0.0]);
         }
         // Finally, hide:
         llSetLinkPrimitiveParamsFast(LINK_SET, [PRIM_GLOW, ALL_SIDES, 0.0]);
@@ -393,18 +394,20 @@ Stealth(integer iHide) {
             list lText = llParseString2List(llList2String(lPrimParams, 0), ["~","="], []);
             string sDesc = llList2String(lPrimParams, 3);
 
-            if (llSubStringIndex(sDesc, "hidden") == -1 || llSubStringIndex(sDesc, "nohide") == -1) {
-                integer idx = llListFindList(lText, ["alpha"]);
-                if (idx != -1) {
-                    float fAlpha = (float)llList2String(lText, idx+1);
-                    llSetLinkAlpha(iLink, fAlpha, ALL_SIDES); // show alpha'd
-                } else llSetLinkAlpha(iLink, 1.0, ALL_SIDES); // show all
-            }
-            if (llSubStringIndex(sDesc, "noglow") == -1) {
-                integer idx = llListFindList(lText, ["glow"]);
-                if (idx != -1) {
-                    float fGlow = (float)llList2String(lText, idx+1);
-                    llSetLinkPrimitiveParamsFast(iLink, [PRIM_GLOW, ALL_SIDES, fGlow]);
+            if (llSubStringIndex(sDesc, "FloatText") != 0) { // ignore titler prim
+                if (llSubStringIndex(sDesc, "hidden") == -1 || llSubStringIndex(sDesc, "nohide") == -1) {
+                    integer idx = llListFindList(lText, ["alpha"]);
+                    if (idx != -1) {
+                        float fAlpha = (float)llList2String(lText, idx+1);
+                        llSetLinkAlpha(iLink, fAlpha, ALL_SIDES); // show alpha'd
+                    } else llSetLinkAlpha(iLink, 1.0, ALL_SIDES); // show all
+                }
+                if (llSubStringIndex(sDesc, "noglow") == -1) {
+                    integer idx = llListFindList(lText, ["glow"]);
+                    if (idx != -1) {
+                        float fGlow = (float)llList2String(lText, idx+1);
+                        llSetLinkPrimitiveParamsFast(iLink, [PRIM_GLOW, ALL_SIDES, fGlow]);
+                    }
                 }
             }
         }
@@ -496,7 +499,7 @@ default {
                     else if (sMessage == "Help") UserCommand(iAuth, "help", kAv, TRUE);
                     else if (sMessage == "Update") UserCommand(iAuth, "update", kAv, TRUE);
                     else if (sMessage == "Version")
-                        g_kHttpVersion = llHTTPRequest("https://raw.githubusercontent.com/OsCollar/oscollar-dev/master/web/device", [], "");
+                        g_kHttpVersion = llHTTPRequest("https://raw.githubusercontent.com/OsCollar/oscollar-dev/stable/web/device", [], "");
                 } else if (sMenu == "UpdateConfirmMenu"){
                     if (sMessage=="Yes") StartUpdate();
                     else {
@@ -653,7 +656,7 @@ default {
             if (compareVersions(sWebVersion, g_sCollarVersion)) {
                 llOwnerSay("An update is available!");
                 // Fetch a list of distribution sites:
-                g_kHttpDistsites = llHTTPRequest("https://raw.githubusercontent.com/OsCollar/oscollar-dev/master/web/distsites", [], "");
+                g_kHttpDistsites = llHTTPRequest("https://raw.githubusercontent.com/OsCollar/oscollar-dev/stable/web/distsites", [], "");
             } else
                 llOwnerSay("You are using the most recent version");
         } else if (kID == g_kHttpDistsites) {
