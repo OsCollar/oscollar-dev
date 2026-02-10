@@ -197,20 +197,17 @@ WearFolder(string sStr, key kID)
     llMessageLinked(LINK_DIALOG, NOTIFY, "1"+"Changing outfit!", kID);
     string sOutfit = llGetSubString(sStr, llStringLength(g_sPathPrefix), -2);
     llMessageLinked(LINK_ROOT, ATTACHMENT_RESPONSE, "CollarCommand|"+(string)g_iAuth+"|ZHAO_ao load "+sOutfit, kID);
-    // always lock collar during outfit change
-    llOwnerSay("@detach=n");
-    // lock the core folder if exists
+    // Protect against detaching:
+    llOwnerSay("@detach=n"); // this collar
     if (g_sCoreFolder != "") llOwnerSay("@detachallthis:"+g_sCoreFolder+"=n");
-    // unwear everything that's not locked:
+    // Remove everything except protected:
     llOwnerSay("@remoutfit=force,detach=force");
-    // ensure everything from core folder is worn:
-    if (g_sCoreFolder != "") llOwnerSay("@attachallover:"+g_sCoreFolder+"=force");
-    // wear the chosen outfit:
-    llOwnerSay("@attachallover:"+sStr+"=force");
-    // cleanup: unlock core folder if exists
+    llSleep(1.5);
+    // Unprotect:
     if (g_sCoreFolder != "") llOwnerSay("@detachallthis:"+g_sCoreFolder+"=y");
-    // cleanup: unlock the collar, only if it was locked temporarily
-    if (g_iLocked == FALSE) llOwnerSay("@detach=y");
+    if (g_iLocked == FALSE) llOwnerSay("@detach=y"); // this collar (if it was unlocked)
+    // Wear the outfit:
+    llOwnerSay("@attachallover:"+sStr+"=force");
 }
 
 doRestrictions()
@@ -652,6 +649,7 @@ default
     listen(integer iChan, string sName, key kID, string sMsg)
     {
         llSetTimerEvent(0.0);
+        llListenRemove(g_iListener);
         if (iChan == g_iFolderRLV) {
             if (llStringLength(sMsg) == 1023) llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"\n\nATTENTION: Either some of the names of your outfit folders are too long, or there are too many folders in your Outfits directory. This could lead to gaps in your outfits folder index. For best operability, please consider reducing the overall amount of subfolders within the Outfits directory and use shorter names.\n",g_kWearer);
             string sPrompt;
