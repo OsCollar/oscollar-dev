@@ -164,6 +164,7 @@ integer CheckCommandAuth(key kCmdGiver, integer iAuth)
 
 SetLength(integer iIn)
 {
+    if (iIn == 0) iIn = 3; // i had a rare edge case where this happened
     g_iLength = iIn;
     if (g_kLeashedTo != NULL_KEY) {
         llTargetRemove(g_iTargetHandle);
