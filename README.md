@@ -12,6 +12,7 @@ OsCollar is a set of gadgets for submission roleplay for use in OpenSim grids
     > res: Resource of creative content.
 
         > anims: Motions and Animations as .bvh and .avm binaries.
+        > creatorkit: Sample collar for creators to use as a base
         > models: 3D Models as .dae and .blend binaries.
         > sounds: Sounds as .wav and .aup binaries.
         > textures: Images as .png and .xcf binaries.
@@ -31,9 +32,7 @@ OsCollar is a set of gadgets for submission roleplay for use in OpenSim grids
 
 #### Requirements
 
-Simulator 0.9.3.1 or newer  
-or  
-Dreamgrid 7.04 or newer  
+Simulator 0.9.3.1 or newer
 
 - Teleporting to a sim running older versions of OpenSim may result in loss of settings (linkset data) and loss of functionality (non-running scripts)
 - Teleporting to a hypergrid sim may result in scripts to stop running and/or reset, unless the destination sim is patched
