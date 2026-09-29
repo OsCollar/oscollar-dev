@@ -322,7 +322,7 @@ default
                 sToken = llGetSubString(sToken, i+1, -1);
                 if (sToken == "on") {
                     g_iBellOn=(integer)sValue;
-                    if (g_iBellOn && g_iHasControl == FALSE && llGetAttached())
+                    if (g_iBellOn && llGetAttached())
                         llRequestPermissions(g_kWearer, PERMISSION_TAKE_CONTROLS);
                     else if (g_iBellOn == FALSE && g_iHasControl) {
                         llReleaseControls();
