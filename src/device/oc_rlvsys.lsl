@@ -265,7 +265,7 @@ SafeWord(key kID)
     }
     llMessageLinked(LINK_THIS, RLV_CMD, "unsit=force", "");
     llMessageLinked(LINK_ALL_OTHERS, RLV_CLEAR, "", "");
-    if (kID != NULL_KEY) llMessageLinked(LINK_DIALOG, NOTIFY, "1"+"RLV restrictions cleared.", kID);
+    if (kID != NULL_KEY && kID != "") llMessageLinked(LINK_DIALOG, NOTIFY, "1"+"RLV restrictions cleared.", kID);
 }
 
 UserCommand(integer iAuth, string sStr, key kID)
