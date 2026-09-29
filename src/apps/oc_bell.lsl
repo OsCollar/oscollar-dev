@@ -19,7 +19,7 @@
 
 // Debug(string sStr) { llOwnerSay("Debug ["+llGetScriptName()+"]: " + sStr); }
 
-string g_sAppVersion = "2023.01.04";
+string g_sAppVersion = "2026.04.18";
 
 string g_sSubMenu = "Bell";
 string g_sParentMenu = "Apps";
