@@ -163,13 +163,32 @@ HistoryMenu(key kAv, integer iAuth)
 
 RootActionsMenu(key kAv, integer iAuth)
 {
-    list lActions = [lockUnsharedButton(0, iAuth), lockUnsharedButton(1, iAuth), "Save", "Restore"];
-    string sPrompt = "\nRLV Folders\n\nYou are at the #RLV shared root.\n\nFrom here, you can restrict wearing or removing not shared items, you can also save the list of worn shared folders or make the currently saved list be worn again.\n\nWhat do you want to do?";
+    integer iHyperGridded = llSubStringIndex(llKey2Name(g_kWearer), "@");
+    string sPrompt;
+    list lActions = [];
+    if (~iHyperGridded)
+    {
+        sPrompt = "\nRLV folders are unavailable while on the hypergrid.";
+    }
+    else
+    {
+        lActions = [lockUnsharedButton(0, iAuth), lockUnsharedButton(1, iAuth), "Save", "Restore"];
+        sPrompt = "\nRLV Folders\n\nYou are at the #RLV shared root.\n\nFrom here, you can restrict wearing or removing not shared items, you can also save the list of worn shared folders or make the currently saved list be worn again.\n\nWhat do you want to do?";
+    }
     Dialog(kAv, sPrompt, lActions, [UPMENU], 0, iAuth, "RootActions");
 }
 
 FolderActionsMenu(integer iState, key kAv, integer iAuth)
 {
+    integer iHyperGridded = llSubStringIndex(llKey2Name(g_kWearer), "@");
+    string sPrompt;
+    if (~iHyperGridded)
+    {
+        sPrompt = "\nRLV folders are unavailable while on the hypergrid.";
+        Dialog(kAv, sPrompt, [], [UPMENU], 0, iAuth, "FolderActions");
+        return;
+    }
+
     integer iStateThis = iState / 10;
     integer iStateSub = iState % 10;
     list lActions;
@@ -189,7 +208,7 @@ FolderActionsMenu(integer iState, key kAv, integer iAuth)
         if (iStateSub == 2 || iStateSub == 3)
             lActions += [DETACH_ALL,  lockFolderButton(iLock, 3, iAuth)];
     }
-    string sPrompt = "\nRLV Folders\n\nCurrent folder is ";
+    sPrompt = "\nRLV Folders\n\nCurrent folder is ";
     if (g_sCurrentFolder == "") sPrompt += "root";
     else sPrompt += g_sCurrentFolder;
     sPrompt += ".\n";
@@ -282,9 +301,18 @@ doLockUnshared()
 
 FolderBrowseMenu(string sStr)
 {
+    integer iHyperGridded = llSubStringIndex(llKey2Name(g_kWearer), "@");
+    string sPrompt;
+    if (~iHyperGridded)
+    {
+        sPrompt = "\nRLV folders are unavailable while on the hypergrid.";
+        Dialog(g_kAsyncMenuUser, sPrompt, [], [UPMENU], 0, g_iAsyncMenuAuth, "FolderBrowse");
+        return;
+    }
+
     g_iAsyncMenuRequested = FALSE;
     list lUtilityButtons = [UPMENU];
-    string sPrompt = "\nRLV Folders\n\nCurrent folder is ";
+    sPrompt = "\nRLV Folders\n\nCurrent folder is ";
     if (g_sCurrentFolder == "") sPrompt += "root";
     else sPrompt += g_sCurrentFolder;
     sPrompt += ".\n";

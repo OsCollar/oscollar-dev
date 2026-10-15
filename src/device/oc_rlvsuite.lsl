@@ -267,8 +267,12 @@ releaseRestrictions()
 UserCommand(integer iNum, string sStr, key kID, integer bFromMenu)
 {
     string sLowerStr=llToLower(sStr);
+    integer iHyperGridded = llSubStringIndex(llKey2Name(g_kWearer), "@");
     if (sLowerStr == "outfits" || sLowerStr == "menu outfits") {
-        OutfitsMenu(kID, iNum);
+        if (~iHyperGridded) {
+            llMessageLinked(LINK_DIALOG, NOTIFY, "0Outfits are unavailable while on the hypergrid", (string)kID);
+            llMessageLinked(LINK_RLV,iNum,"menu rlv",kID);
+        } else OutfitsMenu(kID, iNum);
         return;
     } else if (iNum == CMD_OWNER && llSubStringIndex(sLowerStr,"corefolder") == 0) {
         string sCoreFolder = llList2String(llParseString2List(sStr, [" "], []), 1);
@@ -294,7 +298,7 @@ UserCommand(integer iNum, string sStr, key kID, integer bFromMenu)
                 llOwnerSay("@findfolders:"+sLowerStr+"="+(string)g_iFolderRLVSearch);
             }
         }
-        if (bFromMenu) OutfitsMenu(kID, iNum);
+        if (bFromMenu && iHyperGridded == -1) OutfitsMenu(kID, iNum);
         return;
     }
     if (iNum == CMD_WEARER) {
