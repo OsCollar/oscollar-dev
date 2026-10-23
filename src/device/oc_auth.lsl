@@ -33,7 +33,7 @@ string g_sParentMenu = "Main";
 string g_sSubMenu = "Access";
 integer g_iRunawayDisable;
 
-string g_sDrop = "sound_bass";
+string g_sDrop = "c46ae041-586e-4546-bc96-43bd54d75192";
 
 integer CMD_ZERO = 0;
 integer CMD_OWNER = 500;
