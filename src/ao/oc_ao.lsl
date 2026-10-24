@@ -19,7 +19,7 @@
 
 // Debug(string sStr) { llOwnerSay("Debug ["+llGetScriptName()+"]: " + sStr); }
 
-string g_sVersion = "2026.10";
+string g_sVersion = "2025.12";
 
 integer g_iInterfaceChannel = -12587429;
 integer g_iHUDChannel = -1812221819;
@@ -112,17 +112,17 @@ DoTextures(string style)
 {
     list lTextures = [
     "Dark",
-    "Minimize~cf81b20b-a832-4689-b8c5-d0ceef8ed1af",
-    "Power~80916b0c-e9d1-468f-87a4-a9c81f6e05d4",
-    "SitAny~0602127d-ed60-48a3-a4da-aa0d2bdcdee9",
-    "Menu~3488b882-6aeb-4649-9b8b-36d51010fdbc",
-    "Device~8c2edb25-2a1c-4377-befb-98f1b144fc6b",
+    "Minimize~button_dark_opensim",
+    "Power~button_dark_io",
+    "SitAny~button_dark_groundsit",
+    "Menu~button_dark_menu",
+    "Device~button_dark_device",
     "Light",
-    "Minimize~9a18c4ff-0944-41ef-bee7-f5eec5a00f73",
-    "Power~b3f0fb85-ea68-47f0-b88d-66a703d78fb5",
-    "SitAny~338b22be-fcd0-4ee4-867a-877b2261ad1e",
-    "Menu~2192f5a6-74e5-4ab3-8321-c92ba02e89cb",
-    "Device~1071404f-8e6e-4559-bb79-0162a2334abd"
+    "Minimize~button_light_opensim",
+    "Power~button_light_io",
+    "SitAny~button_light_groundsit",
+    "Menu~button_light_menu",
+    "Device~button_light_device"
     ];
     integer i = llListFindList(lTextures, [style]);
     integer iEnd = i + (llGetListLength(lTextures)/2) - 1;
@@ -501,12 +501,12 @@ Command(key kID, string sCommand)
     } else if (sCommand == "unlock") {
         g_iLocked = FALSE;
         llOwnerSay("@detach=y");
-        llPlaySound("ebc28770-4a01-482d-9049-67a97c6661ed", 1.0);
+        llPlaySound("sound_unlock", 1.0);
         Notify(kID,"The AO has been unlocked.", TRUE);
     } else if (sCommand == "lock") {
         g_iLocked = TRUE;
         llOwnerSay("@detach=n");
-        llPlaySound("bb2e522d-b8ca-49b3-b1b6-f24334fac5cd", 1.0);
+        llPlaySound("sound_lock", 1.0);
         Notify(kID,"The AO has been locked.", TRUE);
     } else if (sCommand == "menu") MenuAO(kID);
     else if (sCommand == "load") {
