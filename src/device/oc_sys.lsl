@@ -22,7 +22,7 @@
 //on menu request, give dialog, with alphabetized list of submenus
 //on listen, send submenu link message
 
-string g_sCollarVersion="2026.10.24";
+string g_sCollarVersion="2026.11.02";
 
 key g_kWearer = NULL_KEY;
 
