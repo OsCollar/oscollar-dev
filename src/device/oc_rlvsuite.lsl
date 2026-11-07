@@ -48,6 +48,8 @@ integer g_iDazedRestricted;
 
 integer g_iSitting;
 
+integer g_iHyperGridded;
+
 integer g_iListener;
 integer g_iFolderRLV = 98745923;
 integer g_iFolderRLVSearch = 98745925;
@@ -95,6 +97,8 @@ integer DIALOG_RESPONSE = -9001;
 integer DIALOG_TIMEOUT = -9002;
 integer SENSORDIALOG = -9003;
 integer g_iAuth;
+
+integer REGION_TELEPORT = 10051;
 
 integer g_iLocked;
 key g_kLastForcedSeat = NULL_KEY;
@@ -267,12 +271,8 @@ releaseRestrictions()
 UserCommand(integer iNum, string sStr, key kID, integer bFromMenu)
 {
     string sLowerStr=llToLower(sStr);
-    integer iHyperGridded = llSubStringIndex(llKey2Name(g_kWearer), "@");
     if (sLowerStr == "outfits" || sLowerStr == "menu outfits") {
-        if (~iHyperGridded) {
-            llMessageLinked(LINK_DIALOG, NOTIFY, "0Outfits are unavailable while on the hypergrid", (string)kID);
-            llMessageLinked(LINK_RLV,iNum,"menu rlv",kID);
-        } else OutfitsMenu(kID, iNum);
+        OutfitsMenu(kID, iNum);
         return;
     } else if (iNum == CMD_OWNER && llSubStringIndex(sLowerStr,"corefolder") == 0) {
         string sCoreFolder = llList2String(llParseString2List(sStr, [" "], []), 1);
@@ -288,6 +288,8 @@ UserCommand(integer iNum, string sStr, key kID, integer bFromMenu)
     } else if (llSubStringIndex(sStr,"wear ") == 0) {
         if (g_iDressRestricted)
             llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Oops! Outfits can't be worn while the ability to dress is restricted.",kID);
+        else if (g_iHyperGridded)
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Outfits can't be worn while on the hypergrid.",kID);
         else {
             sLowerStr = llDeleteSubString(sStr,0,llStringLength("wear ")-1);
             if (sLowerStr != "") {
@@ -298,7 +300,7 @@ UserCommand(integer iNum, string sStr, key kID, integer bFromMenu)
                 llOwnerSay("@findfolders:"+sLowerStr+"="+(string)g_iFolderRLVSearch);
             }
         }
-        if (bFromMenu && iHyperGridded == -1) OutfitsMenu(kID, iNum);
+        if (bFromMenu) OutfitsMenu(kID, iNum);
         return;
     }
     if (iNum == CMD_WEARER) {
@@ -537,6 +539,8 @@ default
     state_entry()
     {
         g_kWearer = llGetOwner();
+        if (llSubStringIndex(llKey2Name(g_kWearer), "@") > -1) g_iHyperGridded = TRUE;
+        else g_iHyperGridded = FALSE;
     }
 
     on_rez(integer iParam)
@@ -544,6 +548,8 @@ default
         if (llGetOwner() != g_kWearer) llResetScript();
         g_iRlvOn = FALSE;
         g_iRlvaOn = FALSE;
+        if (llSubStringIndex(llKey2Name(g_kWearer), "@") > -1) g_iHyperGridded = TRUE;
+        else g_iHyperGridded = FALSE;
     }
 
     link_message(integer iSender, integer iNum, string sStr, key kID)
@@ -587,6 +593,9 @@ default
                 if (sValue=="none") g_sCoreFolder = "";
                 else g_sCoreFolder = sValue;
             } else if (sToken == "global_locked") g_iLocked=(integer)sValue;
+        } else if (iNum == REGION_TELEPORT) {
+            if (llSubStringIndex(llKey2Name(g_kWearer), "@") > -1) g_iHyperGridded = TRUE;
+            else g_iHyperGridded = FALSE;
         } else if (iNum >= CMD_OWNER && iNum <= CMD_WEARER) UserCommand(iNum, sStr, kID,FALSE);
         else if (iNum == RLV_ON) {
             g_iRlvOn = TRUE;

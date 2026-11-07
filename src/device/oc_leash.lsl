@@ -56,6 +56,9 @@ integer DIALOG_TIMEOUT = -9002;
 integer SENSORDIALOG = -9003;
 integer CMD_PARTICLE = 20000;
 
+integer REGION_CROSSED = 10050;
+integer REGION_TELEPORT = 10051;
+
 string BUTTON_UPMENU = "BACK";
 string BUTTON_PARENTMENU = "Main";
 string BUTTON_SUBMENU = "Leash";
@@ -701,6 +704,8 @@ default
         } else if (iNum == DIALOG_TIMEOUT) {
             integer iMenuIndex = llListFindList(g_lMenuIDs, [kMessageID]);
             g_lMenuIDs = llDeleteSubList(g_lMenuIDs, iMenuIndex-1, iMenuIndex-2 + g_iMenuStride);
+        } else if (iNum == REGION_CROSSED || iNum == REGION_TELEPORT) {
+            g_vRegionSize = osGetRegionSize();
         } else if (iNum == LINK_UPDATE) {
             if (sMessage == "LINK_DIALOG") LINK_DIALOG = iSender;
             else if (sMessage == "LINK_RLV") LINK_RLV = iSender;
@@ -753,7 +758,7 @@ default
         if (iPerm & PERMISSION_TAKE_CONTROLS)
             llTakeControls(CONTROL_ROT_LEFT | CONTROL_ROT_RIGHT | CONTROL_LBUTTON | CONTROL_ML_LBUTTON | CONTROL_LEFT | CONTROL_RIGHT | CONTROL_FWD | CONTROL_BACK | CONTROL_UP | CONTROL_DOWN, TRUE, FALSE);
     }
-    
+
     object_rez(key id)
     {
         g_iLength=3;
@@ -763,7 +768,6 @@ default
     changed (integer iChange)
     {
         if (iChange & CHANGED_OWNER) g_kWearer = llGetOwner();
-        if (iChange & CHANGED_REGION) g_vRegionSize = osGetRegionSize();
         if (iChange & CHANGED_INVENTORY) FindLeashHolder();
     }
 }

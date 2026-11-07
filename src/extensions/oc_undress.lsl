@@ -20,7 +20,7 @@
 
 // Debug(string sStr) { llOwnerSay("Debug ["+llGetScriptName()+"]: " + sStr); }
 
-string g_sAppVersion = "2023.01.13";
+string g_sAppVersion = "2026.11.07";
 
 string g_sSubMenu = "Un/Dress";
 string g_sParentMenu = "RLV";
@@ -141,6 +141,8 @@ integer DIALOG = -9000;
 integer DIALOG_RESPONSE = -9001;
 integer DIALOG_TIMEOUT = -9002;
 
+integer REGION_TELEPORT = 10051;
+
 string UPMENU = "BACK";
 
 string ALL = " ALL";
@@ -159,6 +161,8 @@ key g_kMenuUser = NULL_KEY;
 integer g_iMenuAuth;
 
 integer g_iRLVOn;
+
+integer g_iHyperGridded;
 
 list g_lLockedItems;
 list g_lLockedAttach;
@@ -203,6 +207,11 @@ QueryClothing(key kAv, integer iAuth)
 
 ClothingMenu(key kID, string sStr, integer iAuth)
 {
+    if (g_iHyperGridded) {
+        Notify(kID, "Can't remove clothing while on the hypergrid.", FALSE);
+        MainMenu(kID, iAuth);
+        return;
+    }
     string sPrompt = "\nSelect an article of clothing to remove.\n\n";
     list lButtons = [];
     integer iStop = llGetListLength(DETACH_CLOTH_POINTS);
@@ -270,6 +279,11 @@ LockAttachmentMenu(key kID, integer iAuth)
 
 DetachMenu(key kID, string sStr, integer iAuth)
 {
+    if (g_iHyperGridded) {
+        Notify(kID, "Can't detach attachments while on the hypergrid.", FALSE);
+        MainMenu(kID, iAuth);
+        return;
+    }
     string sPrompt = "\nSelect an attachment to remove.\n";
     integer myattachpoint = llGetAttached();
     list lButtons;
@@ -499,6 +513,8 @@ default
     state_entry()
     {
         g_kWearer = llGetOwner();
+        if (llSubStringIndex(llKey2Name(g_kWearer), "@") > -1) g_iHyperGridded = TRUE;
+        else g_iHyperGridded = FALSE;
     }
 
     link_message(integer iSender, integer iNum, string sStr, key kID)
@@ -599,6 +615,9 @@ default
         } else if (iNum == DIALOG_TIMEOUT) {
             integer iMenuIndex = llListFindList(g_lMenuIDs, [kID]);
             if (iMenuIndex != -1) g_lMenuIDs = llDeleteSubList(g_lMenuIDs, iMenuIndex-1, iMenuIndex-2+g_iMenuStride);
+        } else if (iNum == REGION_TELEPORT) {
+            if (llSubStringIndex(llKey2Name(g_kWearer), "@") > -1) g_iHyperGridded = TRUE;
+            else g_iHyperGridded = FALSE;
         } else if (iNum == LINK_UPDATE) {
             if (sStr == "LINK_DIALOG") LINK_DIALOG = iSender;
             else if (sStr == "LINK_RLV") LINK_RLV = iSender;

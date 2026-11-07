@@ -48,6 +48,8 @@ integer DIALOG = -9000;
 integer DIALOG_RESPONSE = -9001;
 integer DIALOG_TIMEOUT = -9002;
 
+integer REGION_TELEPORT = 10051;
+
 string PARENT = "⏎";
 string ACTIONS_CURRENT = "Actions";
 string ROOT_ACTIONS = "Global Actions";
@@ -89,6 +91,8 @@ string g_sOutfitsFolder = "Outfits";
 list g_lSearchList;
 
 integer g_iLastFolderState;
+
+integer g_iHyperGridded;
 
 key g_kWearer = NULL_KEY;
 string g_sSettingToken = "rlvfolders_";
@@ -163,10 +167,9 @@ HistoryMenu(key kAv, integer iAuth)
 
 RootActionsMenu(key kAv, integer iAuth)
 {
-    integer iHyperGridded = llSubStringIndex(llKey2Name(g_kWearer), "@");
     string sPrompt;
     list lActions = [];
-    if (~iHyperGridded)
+    if (g_iHyperGridded)
     {
         sPrompt = "\nRLV folders are unavailable while on the hypergrid.";
     }
@@ -180,9 +183,8 @@ RootActionsMenu(key kAv, integer iAuth)
 
 FolderActionsMenu(integer iState, key kAv, integer iAuth)
 {
-    integer iHyperGridded = llSubStringIndex(llKey2Name(g_kWearer), "@");
     string sPrompt;
-    if (~iHyperGridded)
+    if (g_iHyperGridded)
     {
         sPrompt = "\nRLV folders are unavailable while on the hypergrid.";
         Dialog(kAv, sPrompt, [], [UPMENU], 0, iAuth, "FolderActions");
@@ -301,9 +303,8 @@ doLockUnshared()
 
 FolderBrowseMenu(string sStr)
 {
-    integer iHyperGridded = llSubStringIndex(llKey2Name(g_kWearer), "@");
     string sPrompt;
-    if (~iHyperGridded)
+    if (g_iHyperGridded)
     {
         sPrompt = "\nRLV folders are unavailable while on the hypergrid.";
         Dialog(g_kAsyncMenuUser, sPrompt, [], [UPMENU], 0, g_iAsyncMenuAuth, "FolderBrowse");
@@ -433,6 +434,8 @@ default
     state_entry()
     {
         g_kWearer = llGetOwner();
+        if (llSubStringIndex(llKey2Name(g_kWearer), "@") > -1) g_iHyperGridded = TRUE;
+        else g_iHyperGridded = FALSE;
     }
 
     link_message(integer iSender, integer iNum, string sStr, key kID)
@@ -596,6 +599,9 @@ default
         } else if (iNum == DIALOG_TIMEOUT) {
             integer iMenuIndex = llListFindList(g_lMenuIDs, [kID]);
             g_lMenuIDs = llDeleteSubList(g_lMenuIDs, iMenuIndex-1, iMenuIndex-2 + g_iMenuStride);
+        } else if (iNum == REGION_TELEPORT) {
+            if (llSubStringIndex(llKey2Name(g_kWearer), "@") > -1) g_iHyperGridded = TRUE;
+            else g_iHyperGridded = FALSE;
         } else if (iNum == LM_SETTING_RESPONSE) {
             list lParams = llParseString2List(sStr, ["="], []);
             string sToken = llList2String(lParams, 0);
