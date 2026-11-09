@@ -98,8 +98,6 @@ integer DIALOG_TIMEOUT = -9002;
 integer SENSORDIALOG = -9003;
 integer g_iAuth;
 
-integer REGION_TELEPORT = 10051;
-
 integer g_iLocked;
 key g_kLastForcedSeat = NULL_KEY;
 string g_sLastForcedSeat;
@@ -593,9 +591,6 @@ default
                 if (sValue=="none") g_sCoreFolder = "";
                 else g_sCoreFolder = sValue;
             } else if (sToken == "global_locked") g_iLocked=(integer)sValue;
-        } else if (iNum == REGION_TELEPORT) {
-            if (llSubStringIndex(llKey2Name(g_kWearer), "@") > -1) g_iHyperGridded = TRUE;
-            else g_iHyperGridded = FALSE;
         } else if (iNum >= CMD_OWNER && iNum <= CMD_WEARER) UserCommand(iNum, sStr, kID,FALSE);
         else if (iNum == RLV_ON) {
             g_iRlvOn = TRUE;
@@ -688,5 +683,13 @@ default
     {
         llListenRemove(g_iListener);
         llSetTimerEvent(0.0);
+    }
+
+    changed(integer iChange)
+    {
+        if (iChange & CHANGED_TELEPORT) {
+            if (llSubStringIndex(llKey2Name(g_kWearer), "@") > -1) g_iHyperGridded = TRUE;
+            else g_iHyperGridded = FALSE;
+        }
     }
 }

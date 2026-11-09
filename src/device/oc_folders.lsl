@@ -48,8 +48,6 @@ integer DIALOG = -9000;
 integer DIALOG_RESPONSE = -9001;
 integer DIALOG_TIMEOUT = -9002;
 
-integer REGION_TELEPORT = 10051;
-
 string PARENT = "⏎";
 string ACTIONS_CURRENT = "Actions";
 string ROOT_ACTIONS = "Global Actions";
@@ -599,9 +597,6 @@ default
         } else if (iNum == DIALOG_TIMEOUT) {
             integer iMenuIndex = llListFindList(g_lMenuIDs, [kID]);
             g_lMenuIDs = llDeleteSubList(g_lMenuIDs, iMenuIndex-1, iMenuIndex-2 + g_iMenuStride);
-        } else if (iNum == REGION_TELEPORT) {
-            if (llSubStringIndex(llKey2Name(g_kWearer), "@") > -1) g_iHyperGridded = TRUE;
-            else g_iHyperGridded = FALSE;
         } else if (iNum == LM_SETTING_RESPONSE) {
             list lParams = llParseString2List(sStr, ["="], []);
             string sToken = llList2String(lParams, 0);
@@ -702,5 +697,13 @@ default
     {
         llListenRemove(g_iListener);
         llSetTimerEvent(0.0);
+    }
+
+    changed(integer iChange)
+    {
+        if (iChange & CHANGED_TELEPORT) {
+            if (llSubStringIndex(llKey2Name(g_kWearer), "@") > -1) g_iHyperGridded = TRUE;
+            else g_iHyperGridded = FALSE;
+        }
     }
 }

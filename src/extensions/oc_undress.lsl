@@ -20,7 +20,7 @@
 
 // Debug(string sStr) { llOwnerSay("Debug ["+llGetScriptName()+"]: " + sStr); }
 
-string g_sAppVersion = "2026.11.07";
+string g_sAppVersion = "2026.11.09";
 
 string g_sSubMenu = "Un/Dress";
 string g_sParentMenu = "RLV";
@@ -140,8 +140,6 @@ integer RLV_ON = 6101;
 integer DIALOG = -9000;
 integer DIALOG_RESPONSE = -9001;
 integer DIALOG_TIMEOUT = -9002;
-
-integer REGION_TELEPORT = 10051;
 
 string UPMENU = "BACK";
 
@@ -615,9 +613,6 @@ default
         } else if (iNum == DIALOG_TIMEOUT) {
             integer iMenuIndex = llListFindList(g_lMenuIDs, [kID]);
             if (iMenuIndex != -1) g_lMenuIDs = llDeleteSubList(g_lMenuIDs, iMenuIndex-1, iMenuIndex-2+g_iMenuStride);
-        } else if (iNum == REGION_TELEPORT) {
-            if (llSubStringIndex(llKey2Name(g_kWearer), "@") > -1) g_iHyperGridded = TRUE;
-            else g_iHyperGridded = FALSE;
         } else if (iNum == LINK_UPDATE) {
             if (sStr == "LINK_DIALOG") LINK_DIALOG = iSender;
             else if (sStr == "LINK_RLV") LINK_RLV = iSender;
@@ -637,5 +632,13 @@ default
     {
         llListenRemove(g_iListener);
         llSetTimerEvent(0.0);
+    }
+
+    changed(integer iChange)
+    {
+        if (iChange & CHANGED_TELEPORT) {
+            if (llSubStringIndex(llKey2Name(g_kWearer), "@") > -1) g_iHyperGridded = TRUE;
+            else g_iHyperGridded = FALSE;
+        }
     }
 }
