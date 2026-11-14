@@ -335,7 +335,7 @@ SetLockElementAlpha() { //EB
         else jump next;
         // restore glow (if any):
         list lPrimParams = llGetLinkPrimitiveParams(iLink, [PRIM_TEXT, PRIM_DESC]);
-        list sDesc = llList2String(lPrimParams, 3);
+        string sDesc = llList2String(lPrimParams, 3);
         if (llSubStringIndex(sDesc, "noglow") == -1)
         {
             list lText = llParseString2List(llList2String(lPrimParams, 0), ["~","="], []);
