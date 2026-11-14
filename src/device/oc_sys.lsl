@@ -172,10 +172,6 @@ UpdateConfirmMenu() {
 HelpMenu(key kID, integer iAuth) {
     string sPrompt="\nVersion: "+g_sCollarVersion+"\n";
     sPrompt += "\nThis %DEVICETYPE% has a "+g_sIntegrity+" core.\n";
-    string sVersion = osGetSimulatorVersion();
-    integer idx = llSubStringIndex(sVersion, " ");
-    integer idx2 = llSubStringIndex(llGetSubString(sVersion, idx+1, -1), " ");
-    sPrompt += "\nSimulator: "+llGetSubString(sVersion, 0, idx+idx2); // strip contents of bin/.version
     list lUtility = [UPMENU];
     list lStaticButtons=["Help","Update","Version"];
     Dialog(kID, sPrompt, lStaticButtons, lUtility, 0, iAuth, "Help/About");
@@ -315,12 +311,15 @@ UserCommand(integer iNum, string sStr, key kID, integer fromMenu) {
 
 // Returns timestamp in gridtime (PDT/PST) as YYYY-MM-DD.HH:MM:SS
 string GetTimestamp() {
+    /*
     integer sltSecs = (integer) llGetWallclock(); // Get SL time in seconds (will be either PST or PDT)
     integer diff    = (integer) llGetGMTclock() - sltSecs; // Compute the difference between UTC and SLT
     integer iEpoch = llGetUnixTime(); // UTC unix
     if (diff == 25200 || diff == -61200) iEpoch -= 25200; // PDT unix
     else iEpoch -= 28800; // PST unix
     string sOut = osUnixTimeToTimestamp(iEpoch); // threatlevel VeryLow
+    */
+    string sOut = llGetTimestamp();
     return llGetSubString(sOut, 0, 18); // strip off unnecessary microseconds
 }
 
@@ -335,7 +334,7 @@ SetLockElementAlpha() { //EB
         else jump next;
         // restore glow (if any):
         list lPrimParams = llGetLinkPrimitiveParams(iLink, [PRIM_TEXT, PRIM_DESC]);
-        list sDesc = llList2String(lPrimParams, 3);
+        string sDesc = llList2String(lPrimParams, 3);
         if (llSubStringIndex(sDesc, "noglow") == -1)
         {
             list lText = llParseString2List(llList2String(lPrimParams, 0), ["~","="], []);
